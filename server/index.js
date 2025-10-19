@@ -6,6 +6,8 @@ import connectDB from './config/db.js';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import userRouter from './routes/userRoute.js';
+import shopRouter from './routes/shopRoutes.js';
+import itemRouter from './routes/itemRoutes.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 app.use(express.json());
@@ -16,7 +18,8 @@ app.use(cors({
 app.use(cookieParser())
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRouter);
-
+app.use('/api/shop', shopRouter);
+app.use('/api/item', itemRouter);
 connectDB();
 
 app.listen(PORT, () => {
