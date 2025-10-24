@@ -10,7 +10,9 @@ export const serverUrl = "http://localhost:5000";
 import { useNavigate } from "react-router-dom";
 import useGetCity from "./Hooks/useGetCity";
 import useGetShop from "./Hooks/useGetMyShop";
-import CreateEditShop from "./Pages/createEditShop";
+import CreateEditShop from "./Pages/CreateEditShop";
+import AddItem from "./Pages/AddItem";
+import EditItem from "./components/EditItem";
 const App = () => {
   const { userData } = useSelector((state) => state.user);
 
@@ -38,6 +40,14 @@ const App = () => {
       <Route
         path="/editshop"
         element={userData ? <CreateEditShop /> : <Navigate to={"/signin"} />}
+      />
+      <Route
+        path="/additem"
+        element={userData ? <AddItem /> : <Navigate to={"/signin"} />}
+      />
+      <Route
+        path="/edititem/:itemId"
+        element={userData ? <EditItem/> : <Navigate to={"/signin"} />}
       />
     </Routes>
   );

@@ -4,13 +4,62 @@ import { useSelector } from "react-redux";
 import { FaUtensils } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { FaPen } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
+import OwnerItemcard from "./OwnerItemcard";
+
+
 const OwnerDashboard = () => {
   const { shopData } = useSelector((state) => state.owner);
   const navigate = useNavigate();
 
+  // Helper component to display shop details (repeated logic)
+  const ShopDetails = ({ children }) => (
+    <div className="w-full flex flex-col items-center gap-6 px-4 sm:px-6">
+      <h1 className="text-2xl sm:text-3xl text-gray-900 flex items-center gap-3 mt-8 text-center">
+        <FaUtensils className="text-[#ff4d2d] w-14 h-14" />
+        Welcome to {shopData.name}
+      </h1>
+
+      {/* Shop Info Card */}
+      <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-orange-100 hover:shadow-2xl transition-all duration-300 w-full max-w-3xl relative">
+        <button
+          onClick={() => navigate("/editshop")}
+          className="absolute top-4 right-4 bg-[#ff4d2d] text-white p-2 rounded-full shadow-md hover:bg-orange-600 transition-colors z-10"
+        >
+          <FaPen />
+        </button>
+
+        <img
+          src={shopData.img} // Corrected based on common practice, assuming img exists
+          alt={shopData.name || "Shop Image"}
+          className="w-full h-48 sm:h-64 object-cover"
+        />
+        <div className="p-4 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
+            {shopData.name}
+          </h2>
+          <p className="text-gray-500 mb-4">
+            {shopData.city}, {shopData.state}
+          </p>
+          <p className="text-gray-700 mb-4">{shopData.address}</p>
+          <div className="text-xs sm:text-sm text-gray-400">
+            <p>Created: {new Date(shopData.createdAt).toLocaleString()}</p>
+            <p>
+              Last Updated: {new Date(shopData.updatedAt).toLocaleString()}
+            </p>
+          </div>
+        </div>
+      </div>
+      {/* Additional content (e.g., Add Item prompt or Item List) */}
+      {children}
+    </div>
+  );
+
   return (
     <div className="w-full min-h-screen bg-[#fff9f6] flex flex-col items-center">
       <OwnerNav />
+
+      {/* 1. Shop NOT FOUND (Add Shop prompt) */}
       {!shopData && (
         <div className="flex justify-center items-center p-4 sm:p-6">
           <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
@@ -34,40 +83,45 @@ const OwnerDashboard = () => {
         </div>
       )}
 
-      {shopData && (
-        <div className="w-full flex flex-col items-center gap-6 px-4 sm:px-6">
-          <h1 className="text-2xl sm:text-3xl text-gray-900 flex items-center gap-3 mt-8 text-center">
-            <FaUtensils className="text-[#ff4d2d] w-14 h-14" />
-            Welcome to {shopData.name}
-          </h1>
-
-          <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-orange-100 hover:shadow-2xl transition-all duration-300 w-full max-w-3xl relative">
-            <button
-              onClick={() => navigate("/editshop")}
-              className="absolute top-4 right-4 bg-[#ff4d2d] text-white p-2 rounded-full shadow-md hover:bg-orange-600 transition-colors"
-            >
-              <FaPen />
-            </button>
-            <img
-              src={shopData.image}
-              alt={shopData.name}
-              className="w-full h-48 sm:h-64 object-cover"
-            />
-            <div className="p-4 sm:p-6">
+      {/* 2. Shop FOUND, but NO ITEMS (Add Item prompt) */}
+      {shopData && shopData.items?.length === 0 && (
+        <ShopDetails>
+          <div className="flex items-center justify-center w-full">
+            <div className="bg-white border border-orange-200 shadow-lg rounded-xl p-6 sm:p-8 w-full max-w-xl text-center hover:shadow-2xl transition-all duration-300">
+              <FaUtensils className="text-orange-500 text-4xl sm:text-5xl mx-auto mb-4" />
               <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-                {shopData.name}
+                Add Your Food Items
               </h2>
-              <p className="text-gray-500 mb-4">
-                {shopData.city}, {shopData.state}
+              <p className="text-gray-600 mb-6 text-sm sm:text-base">
+                Share your delicious creations with our customers by adding them
+                to the menu.
               </p>
-              <p className="text-gray-700 mb-4">{shopData.address}</p>
-              <div className="text-xs sm:text-sm text-gray-400">
-                <p>Created: {new Date(shopData.createdAt).toLocaleString()}</p>
-                <p>Last Updated: {new Date(shopData.updatedAt).toLocaleString()}</p>
-              </div>
+              <button
+                className="inline-flex items-center gap-2 bg-orange-500 text-white px-5 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow-md hover:bg-orange-600 transition-colors"
+                onClick={() => navigate("/additem")}
+              >
+                <FaPlus /> Add Item
+              </button>
             </div>
           </div>
-        </div>
+        </ShopDetails>
+      )}
+
+      {/* 3. Shop FOUND, WITH ITEMS (Display Items) */}
+      {shopData && shopData.items?.length > 0 && (
+        <ShopDetails>
+          {/* Add Item Button (optional, but useful when items exist) */}
+          <button
+            className="inline-flex items-center gap-2 bg-orange-500 text-white px-5 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow-md hover:bg-orange-600 transition-colors"
+            onClick={() => navigate("/additem")}
+          >
+            <FaPlus /> Add New Item
+          </button>
+
+          {shopData.items.map((item) => (
+            <OwnerItemcard key={item.id} data={item} />
+          ))}
+        </ShopDetails>
       )}
     </div>
   );

@@ -18,26 +18,16 @@ const itemSchema = new mongoose.Schema(
       type: String,
       enum: [
         "snacks",
-        "beverages",
-        "meals",
-        "desserts",
-        "breakfast",
-        "lunch",
-        "dinner",
-        "street food",
-        "fast food",
-        "healthy",
-        "vegan",
-        "vegetarian",
-        "non-vegetarian",
-        "seafood",
-        "bakery",
-        "ice cream",
-        "salads",
-        "soups",
-        "combo meals",
-        "kids menu",
-        "seasonal specials",
+        "Main Course",
+        "Desserts",
+        "Pizza",
+        "Burgers",
+        "Sandwiches",
+        "South Indian",
+        "North Indian",
+        "Chinese",
+        "Fast Food",
+        "Others",
       ],
       required: true,
     },
@@ -46,7 +36,7 @@ const itemSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
-    foodtype: {
+    foodType: {
       type: String,
       enum: ["veg", "non-veg"],
       required: true,
@@ -54,7 +44,6 @@ const itemSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 
 const item = mongoose.model("Item", itemSchema);
 export default item;
