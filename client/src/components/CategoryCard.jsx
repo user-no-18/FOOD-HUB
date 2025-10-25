@@ -1,11 +1,20 @@
 import React from 'react'
 
-const CategoryCard = () => {
-  return (
-    <div>
-      
-    </div>
-  )
+function CategoryCard({ data }) {
+    return (
+        <div className="relative w-[120px] h-[120px] md:w-[180px] md:h-[180px] rounded-2xl shrink-0">
+            <div className='w-full h-full border-2 border-[#ff4d2d] overflow-hidden bg-white shadow-xl shadow-gray-200 hover:shadow-lg transition-shadow rounded-2xl'>
+                <img 
+                    src={data.image} 
+                    alt="" 
+                    className='w-full h-full object-cover transform hover:scale-110 transition-transform duration-300'
+                />
+            </div>
+            <div className='absolute bottom-0 w-full left-0 bg-[#ffffff96] bg-opacity-95 px-3 py-1 rounded-t-xl text-center shadow text-sm font-medium text-gray-800 backdrop-blur'>
+                {data.category}
+            </div>
+        </div>
+    )
 }
 
 export default CategoryCard

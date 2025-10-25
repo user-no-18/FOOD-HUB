@@ -113,29 +113,81 @@ export const getItemById = async (req, res) => {
 
 export const deleteItemById = async (req, res) => {
   try {
-    const itemId = req.params.itemId;
+    const { itemId } = req.params;
 
+    // Delete the item
     const item = await Item.findByIdAndDelete(itemId);
-    if (!item) return res.status(404).json({ message: "Item not found" });
+    if (!item) {
+      return res.status(400).json({ message: "Item not found" });
+    }
 
+    // Find owner's shop
     const shop = await Shop.findOne({ owner: req.userId });
-    if (!shop) return res.status(404).json({ message: "Shop not found" });
+    if (!shop) {
+      return res.status(404).json({ message: "Shop not found" });
+    }
 
-    shop.items = shop.items.filter(
-      (i) => i._id.toString() !== item._id.toString()
-    );
+    // Remove item reference from shop.items
+    shop.items = shop.items.filter(i => i.toString() !== item._id.toString());
 
+    // Save shop and populate items
     await shop.save();
     await shop.populate({
       path: "items",
-      options: { sort: { updatedAt: -1 } },
+      options: { sort: { createdAt: -1 } }, // newest first
     });
 
-    return res.status(200).json(shop);
+    // Return both deleted item and updated shop
+    return res.status(201).json({
+      shop,
+      item,
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: `Delete item error: ${error.message}` });
+    return res.status(500).json({ message: `Delete item error: ${error.message}` });
   }
 };
 
+export const getItemByCity = async (req, res) => {
+  try {
+    const { city } = req.params;
+
+    if (!city) {
+      return res.status(400).json({ message: "City parameter is required" });
+    }
+
+    // Find shops in the city
+    const shops = await Shop.find({
+      city: { $regex: new RegExp(`^${city}$`, "i") },
+    }).populate("items");
+
+    if (!shops.length) {
+      return res.status(404).json({ message: "No shops found in this city" });
+    }
+
+    // Extract shop IDs
+    const shopIds = shops.map((shop) => shop._id);
+
+    // Find items in these shops
+    const items = await Item.find({ shop: { $in: shopIds } });
+
+    if (!items.length) {
+      return res
+        .status(404)
+        .json({ message: "No items found in shops of this city" });
+    }
+
+    // Standardized JSON response
+    return res.status(200).json({
+      success: true,
+      shopCount: shops.length,
+      itemCount: items.length,
+      items,
+    });
+  } catch (error) {
+    console.error("Error fetching items by city:", error);
+    return res.status(500).json({
+      message: "Server error while fetching items by city",
+      error: error.message,
+    });
+  }
+};

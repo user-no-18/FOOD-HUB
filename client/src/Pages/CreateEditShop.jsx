@@ -99,7 +99,9 @@ const CreateEditShop = () => {
         <form className="space-y-4" onSubmit={handleSubmit}>
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Name</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Name
+            </label>
             <input
               type="text"
               value={name}
@@ -134,7 +136,9 @@ const CreateEditShop = () => {
           {/* City & State */}
           <div className="flex space-x-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700">City</label>
+              <label className="block text-sm font-medium text-gray-700">
+                City
+              </label>
               <input
                 type="text"
                 value={City}
@@ -144,7 +148,9 @@ const CreateEditShop = () => {
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700">State</label>
+              <label className="block text-sm font-medium text-gray-700">
+                State
+              </label>
               <input
                 type="text"
                 value={State}
@@ -157,7 +163,9 @@ const CreateEditShop = () => {
 
           {/* Address */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Address</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Address
+            </label>
             <input
               type="text"
               value={Address}
@@ -172,13 +180,13 @@ const CreateEditShop = () => {
             type="submit"
             disabled={loading}
             className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 ${
-              loading ? "cursor-not-allowed" : "hover:bg-orange-700"
+              loading ? "opacity-50 cursor-not-allowed" : "hover:bg-orange-700"
             }`}
           >
             {loading ? (
-              <div className="flex justify-center items-center gap-2 animate-spin">
+              <div className="flex justify-center items-center gap-2">
                 <svg
-                  className="h-5 w-5 text-white"
+                  className="h-5 w-5 text-white animate-spin"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -194,7 +202,7 @@ const CreateEditShop = () => {
                   <path
                     className="opacity-75"
                     fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
+                    d="M4 12a8 8 0 018-8V12H4z"
                   ></path>
                 </svg>
                 Saving...

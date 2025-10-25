@@ -1,11 +1,12 @@
 import React from "react";
-import OwnerNav from "./Navbar2";
+
 import { useSelector } from "react-redux";
 import { FaUtensils } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { FaPen } from "react-icons/fa";
 import { FaPlus } from "react-icons/fa";
 import OwnerItemcard from "./OwnerItemcard";
+import CommonNav from "./CommonNav";
 
 
 const OwnerDashboard = () => {
@@ -30,7 +31,7 @@ const OwnerDashboard = () => {
         </button>
 
         <img
-          src={shopData.img} // Corrected based on common practice, assuming img exists
+          src={shopData.image} // Corrected based on common practice, assuming img exists
           alt={shopData.name || "Shop Image"}
           className="w-full h-48 sm:h-64 object-cover"
         />
@@ -57,8 +58,8 @@ const OwnerDashboard = () => {
 
   return (
     <div className="w-full min-h-screen bg-[#fff9f6] flex flex-col items-center">
-      <OwnerNav />
-
+      {/* <OwnerNav /> */}
+      <CommonNav />
       {/* 1. Shop NOT FOUND (Add Shop prompt) */}
       {!shopData && (
         <div className="flex justify-center items-center p-4 sm:p-6">
@@ -119,7 +120,7 @@ const OwnerDashboard = () => {
           </button>
 
           {shopData.items.map((item) => (
-            <OwnerItemcard key={item.id} data={item} />
+            <OwnerItemcard key={item._id} data={item} />
           ))}
         </ShopDetails>
       )}

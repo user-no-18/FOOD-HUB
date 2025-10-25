@@ -71,3 +71,19 @@ export const getMyShop = async (req, res) => {
       .json({ message: `Get shop failed: ${error.message}` });
   }
 };
+
+export const getShopByCity = async (req, res) => {
+  try {
+    const { city } = req.params;
+    if (!city) return res.status(400).json({ message: "City is required" });
+
+    const shops = await Shop.find({ city: { $regex: new RegExp(`^${city}$`, "i") } }).populate("items");
+
+    if (!shops.length) return res.status(404).json({ message: "No shops found" });
+
+    res.status(200).json({ success: true, count: shops.length, shops });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};

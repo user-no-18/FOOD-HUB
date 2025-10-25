@@ -6,6 +6,7 @@ import axios from "axios";
 import { serverUrl } from "../App";
 import { useDispatch } from "react-redux";
 import { setShopData } from "../Redux/owner.slice";
+import { triggerItemsRefresh } from "../Redux/user.slice";
 import { ImSpinner2 } from "react-icons/im";
    
 const EditItem = () => {
@@ -85,6 +86,10 @@ const EditItem = () => {
 
       const updatedItem = result.data;
       dispatch(setShopData(updatedItem.shop || {}));
+      
+      // Trigger refresh for user dashboard
+      dispatch(triggerItemsRefresh());
+      
       navigate(-1);
     } catch (err) {
       console.error(err);
@@ -185,7 +190,7 @@ const EditItem = () => {
       <button
   type="submit"
   className="w-full flex items-center justify-center gap-2 bg-[#ff4d2d] text-white px-6 py-3 rounded-full font-semibold shadow-md hover:bg-[#e64528] transition-colors"
-  disabled={loading} // prevent double submit
+  disabled={loading}
 >
   {loading ? (
     <ImSpinner2 className="animate-spin w-5 h-5" />

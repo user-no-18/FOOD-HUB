@@ -13,12 +13,17 @@ import useGetShop from "./Hooks/useGetMyShop";
 import CreateEditShop from "./Pages/CreateEditShop";
 import AddItem from "./Pages/AddItem";
 import EditItem from "./components/EditItem";
+import useGetShopByCity from "./Hooks/UseGetShopByCity";
+import useGetItemByCity from "./Hooks/UseGetItemsByCity";
+
 const App = () => {
   const { userData } = useSelector((state) => state.user);
 
   useGetCurrentUser();
   useGetCity();
   useGetShop();
+  useGetShopByCity();
+  useGetItemByCity();
   return (
     <Routes>
       <Route
@@ -47,7 +52,7 @@ const App = () => {
       />
       <Route
         path="/edititem/:itemId"
-        element={userData ? <EditItem/> : <Navigate to={"/signin"} />}
+        element={userData ? <EditItem /> : <Navigate to={"/signin"} />}
       />
     </Routes>
   );
