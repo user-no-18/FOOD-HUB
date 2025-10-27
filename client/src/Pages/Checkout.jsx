@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { MdKeyboardBackspace } from "react-icons/md";
 import { FaMapMarkerAlt, FaSearch, FaCrosshairs } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +22,7 @@ const RecenterMap = ({ location }) => {
 
 const Checkout = () => {
   const { location, mapAddress } = useSelector((state) => state.map);
+  const [addressInput , setAddressInput]  = useState("")
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -50,7 +51,19 @@ const getCurrentLocation = () => {
     getAddressbyLating(latitude, longitude); 
   });
 };
-
+const getLatLngByAddress = async () => {
+    try {
+     console.log(" calling api :")
+        const result = await axios.get(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(addressInput)}&apiKey=${import.meta.env.VITE_GEOAPIFY_API_KEY}`)
+        const {lat,lon} = result.data.features[0].properties
+        dispatch(setMapLocation({latitude:lat,longitude:lon}))
+        const addressLine2 = result.data?.features?.[0]?.properties?.address_line2 || "";
+dispatch(setMapAddress(addressLine2));
+    } catch (error) {
+        console.log(error)
+    }
+}
+useEffect(()=>{setAddressInput(mapAddress)},[mapAddress])
   return (
     <div className="min-h-screen bg-[#fff9f6] flex items-center justify-center p-6">
       <div
@@ -69,12 +82,13 @@ const getCurrentLocation = () => {
           <div className="flex gap-2 mb-3">
             <input
               type="text"
-              value={mapAddress}
-              readOnly 
+              value={addressInput}
+              onChange={(e)=>setAddressInput(e.target.value)}
+              
               className="flex-1 border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff4d2d]"
               placeholder="Enter your delivery address"
             />
-            <button
+            <button onClick={getLatLngByAddress}
               className="bg-[#ff4d2d] hover:bg-[#e64526] text-white px-3 py-2 rounded-lg flex items-center justify-center"
             >
               <FaSearch />
