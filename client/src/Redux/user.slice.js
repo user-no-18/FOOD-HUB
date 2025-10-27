@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createSlice } from "@reduxjs/toolkit";
 
 const userSlice = createSlice({
 name:'user',
@@ -9,7 +9,9 @@ initialState:{
     address:null,
     shopInMyCity:null,
     itemsInMyCity:null,
-    refreshCounter: 0 // Add this
+    refreshCounter: 0 ,
+    cartItems:[],
+    totalAmount:0
 },
 reducers:{
     setUserData:(state,action)=>{
@@ -33,9 +35,31 @@ reducers:{
     // Add this action to trigger refresh
     triggerItemsRefresh:(state)=>{
         state.refreshCounter += 1
+    },
+    addToCartItems:(state,action)=>{
+        const cartItem=action.payload
+        const existing = state.cartItems.find(i=>i.id===cartItem.id)
+        if(existing){
+            existing.quantity+=cartItem.quantity
+        }else{
+            state.cartItems.push(cartItem)
+        }
+        state.totalAmount=state.cartItems.reduce((total,item)=>total+item.price*item.quantity,0)
+       
+    },
+    deleteFromCartItems:(state,action)=>{
+        const id=action.payload
+        state.cartItems=state.cartItems.filter(i=>i.id!==id)
+    },
+    updateCartItemQuantity:(state,action)=>{
+        const {id,quantity}=action.payload
+        const existing=state.cartItems.find(i=>i.id===id)   
+        if(existing){
+            existing.quantity=quantity
+        }
+        state.totalAmount=state.cartItems.reduce((total,item)=>total+item.price*item.quantity,0)
     }
 }
-
 })
-export const {setUserData,setCity,setState,setAddress,setShopInMyCity,setItemsInMyCity,triggerItemsRefresh}=userSlice.actions
+export const {setUserData,setCity,setState,setAddress,setShopInMyCity,setItemsInMyCity,triggerItemsRefresh,addToCartItems,updateCartItemQuantity,deleteFromCartItems}=userSlice.actions
 export default userSlice.reducer

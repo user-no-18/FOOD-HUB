@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { FaDrumstickBite, FaLeaf, FaShoppingCart } from "react-icons/fa";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import { addToCartItems } from "../Redux/user.slice";
 
 const FoodCard = ({ data }) => {
   const avgRating = data?.averageRating || 0;
   const [quantity, setQuantity] = useState(0);
-
+  const dispatch = useDispatch();
   // Calculate rating stars
   const renderStars = () => {
     const stars = [];
@@ -26,13 +28,6 @@ const FoodCard = ({ data }) => {
   const decreaseQty = () => setQuantity((prev) => (prev > 0 ? prev - 1 : 0));
 
   // Add to cart (can later dispatch to Redux)
-  const handleAddToCart = () => {
-    if (quantity > 0) {
-      console.log(`Added ${quantity} x ${data.name} to cart`);
-      // dispatch(addToCart({ ...data, quantity }))
-      setQuantity(0);
-    }
-  };
 
   return (
     <div className="w-full rounded-2xl border-2 border-[#ff4d2d] bg-white shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col">
@@ -93,7 +88,19 @@ const FoodCard = ({ data }) => {
 
             {/* Cart Button */}
             <button
-              onClick={handleAddToCart}
+              onClick={() =>
+                dispatch(
+                  addToCartItems({
+                    id: data._id,
+                    name: data.name,
+                    price: data.price,
+                    quantity: quantity,
+                    image: data.image,
+                    shop: null,
+                    foodType: null,
+                  })
+                )
+              }
               className={`p-2 rounded-full transition ${
                 quantity > 0
                   ? "bg-[#ff4d2d] text-white hover:bg-orange-600"

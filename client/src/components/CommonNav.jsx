@@ -89,6 +89,15 @@ function CommonNav() {
                     <button
                       className="text-[#ff4d2d] text-xs sm:text-sm font-semibold hover:underline text-left"
                       onClick={() => {
+                        navigate("/my-carts");
+                        setShowInfo(false);
+                      }}
+                    >
+                      Go to Carts
+                    </button>
+                    <button
+                      className="text-[#ff4d2d] text-xs sm:text-sm font-semibold hover:underline text-left"
+                      onClick={() => {
                         navigate("/my-orders");
                         setShowInfo(false);
                       }}
