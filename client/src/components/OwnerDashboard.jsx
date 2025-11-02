@@ -31,7 +31,7 @@ const OwnerDashboard = () => {
         </button>
 
         <img
-          src={shopData.image} // Corrected based on common practice, assuming img exists
+          src={shopData.image} 
           alt={shopData.name || "Shop Image"}
           className="w-full h-48 sm:h-64 object-cover"
         />
@@ -51,7 +51,7 @@ const OwnerDashboard = () => {
           </div>
         </div>
       </div>
-      {/* Additional content (e.g., Add Item prompt or Item List) */}
+      
       {children}
     </div>
   );

@@ -27,7 +27,21 @@ const FoodCard = ({ data }) => {
   const increaseQty = () => setQuantity((prev) => prev + 1);
   const decreaseQty = () => setQuantity((prev) => (prev > 0 ? prev - 1 : 0));
 
-  // Add to cart (can later dispatch to Redux)
+  const handleAddToCart = () => {
+    if (quantity > 0) {
+      dispatch(
+        addToCartItems({
+          id: data._id,
+          name: data.name,
+          price: data.price,
+          quantity: quantity,
+          image: data.image,
+          shop: data.shop,
+          foodType: data.type,
+        })
+      );
+    }
+  };
 
   return (
     <div className="w-full rounded-2xl border-2 border-[#ff4d2d] bg-white shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col">
@@ -88,19 +102,7 @@ const FoodCard = ({ data }) => {
 
             {/* Cart Button */}
             <button
-              onClick={() =>
-                dispatch(
-                  addToCartItems({
-                    id: data._id,
-                    name: data.name,
-                    price: data.price,
-                    quantity: quantity,
-                    image: data.image,
-                    shop: null,
-                    foodType: null,
-                  })
-                )
-              }
+              onClick={() => handleAddToCart()}
               className={`p-2 rounded-full transition ${
                 quantity > 0
                   ? "bg-[#ff4d2d] text-white hover:bg-orange-600"

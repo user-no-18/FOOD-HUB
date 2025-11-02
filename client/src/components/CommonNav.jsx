@@ -167,7 +167,7 @@ function CommonNav() {
             {/* Pending Orders */}
             <div
               className="hidden md:flex items-center gap-2 cursor-pointer relative px-3 py-2 rounded-lg bg-[#ff4d2d]/10 text-[#ff4d2d] font-medium hover:bg-[#ff4d2d]/20 transition-colors"
-              onClick={() => navigate("/pending-orders")}
+              onClick={() => navigate("/my-orders")}
             >
               <TbReceipt2 className="w-[20px] h-[20px] lg:w-[22px] lg:h-[22px]" />
               <span className="text-sm whitespace-nowrap">My Orders</span>
@@ -179,7 +179,7 @@ function CommonNav() {
             </div>
             <div
               className="flex md:hidden items-center justify-center relative w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#ff4d2d]/10 text-[#ff4d2d] cursor-pointer hover:bg-[#ff4d2d]/20 transition-colors"
-              onClick={() => navigate("/pending-orders")}
+              onClick={() => navigate("/my-orders")}
             >
               <TbReceipt2 className="w-[20px] h-[20px] sm:w-[22px] sm:h-[22px]" />
               {pendingOrdersCount > 0 && (

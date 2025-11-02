@@ -15,9 +15,12 @@ import AddItem from "./Pages/AddItem";
 import EditItem from "./components/EditItem";
 import useGetShopByCity from "./Hooks/UseGetShopByCity";
 import useGetItemByCity from "./Hooks/UseGetItemsByCity";
-import MyOrder from "./Pages/MyOrder";
+import MyOrderCard from "./Pages/MyOrder";
 import CartPage from "./Pages/CartPage";
 import Checkout from "./Pages/Checkout";
+import OrderPage from "./Pages/OrderPage";
+import useGetMyOrders from "./Hooks/useGetMyOrders";
+
 const App = () => {
   const { userData } = useSelector((state) => state.user);
 
@@ -26,6 +29,7 @@ const App = () => {
   useGetShop();
   useGetShopByCity();
   useGetItemByCity();
+  useGetMyOrders();
   return (
     <Routes>
       <Route
@@ -58,7 +62,7 @@ const App = () => {
       />
       <Route
         path="/my-orders"
-        element={userData ? <MyOrder /> : <Navigate to={"/signin"} />}
+        element={userData ? <MyOrderCard /> : <Navigate to={"/signin"} />}
       />
       <Route
         path="/my-carts"
@@ -68,6 +72,11 @@ const App = () => {
         path="/checkout"
         element={userData ? <Checkout /> : <Navigate to={"/signin"} />}
       />
+      <Route
+        path="/order-page"
+        element={userData ? <OrderPage /> : <Navigate to={"/signin"} />}
+      />
+     
     </Routes>
   );
 };

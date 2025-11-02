@@ -8,6 +8,7 @@ import cors from 'cors';
 import userRouter from './routes/userRoute.js';
 import shopRouter from './routes/shopRoutes.js';
 import itemRouter from './routes/itemRoutes.js';
+import orderRouter from './routes/orderRouter.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 app.use(express.json());
@@ -20,6 +21,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRouter);
 app.use('/api/shop', shopRouter);
 app.use('/api/item', itemRouter);
+app.use('/api/order', orderRouter);
 connectDB();
 
 app.listen(PORT, () => {
