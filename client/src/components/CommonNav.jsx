@@ -24,91 +24,99 @@ function CommonNav() {
     navigate("/login");
   };
 
-  // If no user logged in, return nothing
   if (!userData) return null;
 
   return (
     <>
-      {/* ---------------- USER NAV ---------------- */}
+      {/* USER NAV */}
       {userData.role === "user" && (
-        <nav className="fixed top-0 left-0 w-full bg-white/95 backdrop-blur-md shadow-sm z-[9999]">
-          <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-12 h-[64px] max-w-screen-2xl mx-auto">
+        <nav className="fixed top-0 left-0 right-0 bg-gradient-to-r from-orange-50 via-white to-orange-50 backdrop-blur-lg shadow-md z-[9999] border-b border-orange-100">
+          <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-12 h-16 sm:h-18 max-w-7xl mx-auto">
             {/* Logo */}
-            <h1
+            <div
               onClick={() => navigate("/")}
-              className="text-xl sm:text-2xl md:text-3xl font-bold text-[#ff4d2d] cursor-pointer select-none flex-shrink-0"
+              className="flex items-center gap-2 cursor-pointer group"
             >
-              Vingo
-            </h1>
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                <span className="text-white font-bold text-lg sm:text-xl">V</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+                Vingo
+              </h1>
+            </div>
 
             {/* Desktop Search */}
-            <div className="hidden md:flex items-center w-[45%] max-w-[520px] bg-white rounded-xl border border-gray-200 shadow-sm px-3 lg:px-4 py-2 gap-2 lg:gap-3 mx-4">
-              <FaLocationDot className="text-[#ff4d2d] text-base lg:text-lg flex-shrink-0" />
-              <span className="truncate text-gray-600 border-r border-gray-300 pr-2 lg:pr-3 text-xs lg:text-sm w-[30%] flex-shrink-0">
+            <div className="hidden md:flex items-center w-full max-w-xl mx-6 lg:mx-8 bg-white rounded-2xl shadow-sm border border-orange-200 px-4 py-2.5 gap-3 hover:shadow-md transition-shadow duration-200">
+              <FaLocationDot className="text-orange-500 text-lg flex-shrink-0" />
+              <span className="text-sm text-gray-600 border-r border-gray-200 pr-3 truncate w-28 flex-shrink-0">
                 {city || "searching..."}
               </span>
-              <IoIosSearch className="text-[#ff4d2d] text-base lg:text-lg flex-shrink-0" />
+              <IoIosSearch className="text-orange-500 text-xl flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Search food or restaurant..."
-                className="w-full outline-none text-gray-700 text-xs lg:text-sm min-w-0"
+                placeholder="Search for food or restaurant..."
+                className="w-full outline-none text-gray-700 text-sm placeholder:text-gray-400"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
               />
             </div>
 
             {/* Right Section */}
-            <div className="flex items-center gap-2 sm:gap-3 md:gap-5 flex-shrink-0">
+            <div className="flex items-center gap-3 sm:gap-4">
               {/* Mobile Search Toggle */}
-              {!showSearch ? (
-                <IoIosSearch
-                  className="text-[#ff4d2d] text-xl sm:text-2xl md:hidden cursor-pointer"
-                  onClick={() => setShowSearch(true)}
-                />
-              ) : (
-                <RxCross2
-                  className="text-[#ff4d2d] text-xl sm:text-2xl md:hidden cursor-pointer"
-                  onClick={() => setShowSearch(false)}
-                />
-              )}
+              <button
+                className="md:hidden w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 hover:bg-orange-100 transition-colors duration-200"
+                onClick={() => setShowSearch(!showSearch)}
+              >
+                {showSearch ? (
+                  <RxCross2 className="text-xl" />
+                ) : (
+                  <IoIosSearch className="text-xl" />
+                )}
+              </button>
 
               {/* Profile */}
               <div className="relative">
-                <div
+                <button
                   onClick={() => setShowInfo((p) => !p)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center bg-[#ff4d2d] text-white font-semibold text-base sm:text-lg shadow-md cursor-pointer"
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-orange-500 to-red-600 text-white font-bold text-base sm:text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center"
                 >
                   {userData?.fullName?.[0]?.toUpperCase() || "?"}
-                </div>
+                </button>
 
                 {showInfo && (
-                  <div className="absolute right-0 top-[45px] sm:top-[50px] w-[160px] sm:w-[170px] bg-white shadow-lg rounded-lg border border-gray-100 p-2 sm:p-3 flex flex-col gap-2">
-                    <span className="font-semibold text-gray-800 text-xs sm:text-sm truncate">
-                      {userData?.fullName}
-                    </span>
+                  <div className="absolute right-0 top-14 w-48 bg-white shadow-2xl rounded-2xl border border-orange-100 p-3 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-2 py-1.5 border-b border-orange-100">
+                      <p className="font-semibold text-gray-800 text-sm truncate">
+                        {userData?.fullName}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {userData?.email || "User"}
+                      </p>
+                    </div>
                     <button
-                      className="text-[#ff4d2d] text-xs sm:text-sm font-semibold hover:underline text-left"
+                      className="px-2 py-2 text-left text-sm text-gray-700 hover:bg-orange-50 rounded-lg transition-colors duration-150 font-medium"
                       onClick={() => {
                         navigate("/my-carts");
                         setShowInfo(false);
                       }}
                     >
-                      Go to Carts
+                      🛒 My Carts
                     </button>
                     <button
-                      className="text-[#ff4d2d] text-xs sm:text-sm font-semibold hover:underline text-left"
+                      className="px-2 py-2 text-left text-sm text-gray-700 hover:bg-orange-50 rounded-lg transition-colors duration-150 font-medium"
                       onClick={() => {
                         navigate("/my-orders");
                         setShowInfo(false);
                       }}
                     >
-                      My Orders
+                      📦 My Orders
                     </button>
                     <button
-                      className="text-[#ff4d2d] text-xs sm:text-sm font-semibold hover:underline text-left"
+                      className="px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 font-medium"
                       onClick={handleLogOut}
                     >
-                      Log Out
+                      🚪 Log Out
                     </button>
                   </div>
                 )}
@@ -118,102 +126,114 @@ function CommonNav() {
 
           {/* Mobile Search */}
           {showSearch && (
-            <div className="w-full bg-white shadow-lg rounded-b-xl px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3 md:hidden border-t border-gray-100">
-              <FaLocationDot className="text-[#ff4d2d] text-base sm:text-lg flex-shrink-0" />
-              <span className="truncate text-gray-600 border-r border-gray-300 pr-2 text-xs sm:text-sm max-w-[80px] sm:max-w-[100px] flex-shrink-0">
-                {city || "searching..."}
-              </span>
-              <IoIosSearch className="text-[#ff4d2d] text-base sm:text-lg flex-shrink-0" />
-              <input
-                type="text"
-                placeholder="Search delicious food..."
-                className="w-full outline-none text-gray-700 text-xs sm:text-sm min-w-0"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-              />
+            <div className="md:hidden bg-white border-t border-orange-100 px-4 py-3 shadow-lg animate-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center gap-3 bg-orange-50 rounded-2xl px-4 py-2.5 border border-orange-200">
+                <FaLocationDot className="text-orange-500 text-base flex-shrink-0" />
+                <span className="text-xs text-gray-600 border-r border-gray-300 pr-3 truncate max-w-[80px] flex-shrink-0">
+                  {city || "searching..."}
+                </span>
+                <IoIosSearch className="text-orange-500 text-lg flex-shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Search food..."
+                  className="w-full outline-none text-sm bg-transparent text-gray-700 placeholder:text-gray-400"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                />
+              </div>
             </div>
           )}
         </nav>
       )}
 
-      {/* ---------------- OWNER NAV ---------------- */}
+      {/* OWNER NAV */}
       {userData.role === "owner" && (
-        <div className="w-full h-[64px] sm:h-[70px] md:h-[80px] flex items-center justify-between md:justify-center gap-[20px] sm:gap-[30px] px-[15px] sm:px-[20px] fixed top-0 z-[9999] bg-[#fff9f6] shadow-sm">
-          {/* Logo */}
-          <h1
-            className="text-xl sm:text-2xl font-bold text-[#ff4d2d] cursor-pointer flex-shrink-0"
-            onClick={() => navigate("/owner-dashboard")}
-          >
-            Food-HuB
-          </h1>
-
-          {/* Owner Controls */}
-          <div className="flex items-center gap-[15px] sm:gap-[20px] flex-shrink-0">
-            {/* Add Food Item */}
-            <button
-              onClick={() => navigate("/additem")}
-              className="hidden md:flex items-center gap-1 px-3 py-2 cursor-pointer rounded-full bg-[#ff4d2d]/10 text-[#ff4d2d] hover:bg-[#ff4d2d]/20 transition-colors"
-            >
-              <FiPlus size={16} />
-              <span className="text-sm font-medium whitespace-nowrap">Add Food Item</span>
-            </button>
-            <button
-              onClick={() => navigate("/additem")}
-              className="flex md:hidden items-center justify-center w-9 h-9 sm:w-10 sm:h-10 cursor-pointer rounded-full bg-[#ff4d2d]/10 text-[#ff4d2d] hover:bg-[#ff4d2d]/20 transition-colors"
-            >
-              <FiPlus size={18} />
-            </button>
-
-            {/* Pending Orders */}
+        <nav className="fixed top-0 left-0 right-0 bg-gradient-to-r from-orange-50 via-white to-orange-50 backdrop-blur-lg shadow-md z-[9999] border-b border-orange-100">
+          <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 sm:h-18 max-w-7xl mx-auto">
+            {/* Logo */}
             <div
-              className="hidden md:flex items-center gap-2 cursor-pointer relative px-3 py-2 rounded-lg bg-[#ff4d2d]/10 text-[#ff4d2d] font-medium hover:bg-[#ff4d2d]/20 transition-colors"
-              onClick={() => navigate("/my-orders")}
+              onClick={() => navigate("/owner-dashboard")}
+              className="flex items-center gap-2 cursor-pointer group"
             >
-              <TbReceipt2 className="w-[20px] h-[20px] lg:w-[22px] lg:h-[22px]" />
-              <span className="text-sm whitespace-nowrap">My Orders</span>
-              {pendingOrdersCount > 0 && (
-                <span className="absolute -right-2 -top-2 text-xs font-bold text-white bg-[#ff4d2d] rounded-full min-w-[20px] h-[20px] flex items-center justify-center px-1">
-                  {pendingOrdersCount}
-                </span>
-              )}
-            </div>
-            <div
-              className="flex md:hidden items-center justify-center relative w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#ff4d2d]/10 text-[#ff4d2d] cursor-pointer hover:bg-[#ff4d2d]/20 transition-colors"
-              onClick={() => navigate("/my-orders")}
-            >
-              <TbReceipt2 className="w-[20px] h-[20px] sm:w-[22px] sm:h-[22px]" />
-              {pendingOrdersCount > 0 && (
-                <span className="absolute -right-1 -top-1 text-[10px] font-bold text-white bg-[#ff4d2d] rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1">
-                  {pendingOrdersCount}
-                </span>
-              )}
-            </div>
-
-            {/* Profile */}
-            <div className="relative overflow-visible">
-              <div
-                className="w-[36px] h-[36px] sm:w-[40px] sm:h-[40px] rounded-full flex items-center justify-center bg-[#ff4d2d] text-white text-base sm:text-[18px] shadow-xl font-semibold cursor-pointer hover:shadow-2xl transition-shadow"
-                onClick={() => setShowInfo((p) => !p)}
-              >
-                {userData?.fullName?.[0]?.toUpperCase() || "?"}
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                <span className="text-white font-bold text-lg sm:text-xl">F</span>
               </div>
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+                Food-HuB
+              </h1>
+            </div>
 
-              {showInfo && (
-                <div className="fixed top-[70px] sm:top-[75px] md:top-[85px] right-[10px] sm:right-[15px] md:right-[10%] lg:right-[25%] w-[160px] sm:w-[180px] bg-white shadow-2xl rounded-xl p-[15px] sm:p-[20px] flex flex-col gap-[10px] z-[9999] border border-gray-100">
-                  <div className="text-[15px] sm:text-[17px] font-semibold truncate">
-                    {userData?.fullName}
+            {/* Owner Controls */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Add Food Item */}
+              <button
+                onClick={() => navigate("/additem")}
+                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-medium text-sm shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+              >
+                <FiPlus size={18} />
+                <span>Add Food Item</span>
+              </button>
+              <button
+                onClick={() => navigate("/additem")}
+                className="md:hidden w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-orange-500 to-red-600 text-white flex items-center justify-center shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+              >
+                <FiPlus size={20} />
+              </button>
+
+              {/* Pending Orders */}
+              <button
+                onClick={() => navigate("/my-orders")}
+                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50 text-orange-600 font-medium text-sm border border-orange-200 hover:bg-orange-100 transition-all duration-200 relative"
+              >
+                <TbReceipt2 size={20} />
+                <span>My Orders</span>
+                {pendingOrdersCount > 0 && (
+                  <span className="absolute -right-1 -top-1 min-w-[22px] h-[22px] bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1.5 shadow-lg animate-pulse">
+                    {pendingOrdersCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => navigate("/my-orders")}
+                className="md:hidden relative w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center hover:bg-orange-100 transition-all duration-200"
+              >
+                <TbReceipt2 size={20} />
+                {pendingOrdersCount > 0 && (
+                  <span className="absolute -right-1 -top-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse">
+                    {pendingOrdersCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Profile */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowInfo((p) => !p)}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-orange-500 to-red-600 text-white font-bold text-base sm:text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center"
+                >
+                  {userData?.fullName?.[0]?.toUpperCase() || "?"}
+                </button>
+
+                {showInfo && (
+                  <div className="absolute right-0 top-14 w-48 bg-white shadow-2xl rounded-2xl border border-orange-100 p-3 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-2 py-1.5 border-b border-orange-100">
+                      <p className="font-semibold text-gray-800 text-sm truncate">
+                        {userData?.fullName}
+                      </p>
+                      <p className="text-xs text-gray-500">Owner</p>
+                    </div>
+                    <button
+                      className="px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 font-medium"
+                      onClick={handleLogOut}
+                    >
+                      🚪 Log Out
+                    </button>
                   </div>
-                  <div
-                    className="text-[#ff4d2d] text-sm sm:text-base font-semibold cursor-pointer hover:underline"
-                    onClick={handleLogOut}
-                  >
-                    Log Out
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </nav>
       )}
     </>
   );

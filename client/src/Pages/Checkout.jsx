@@ -14,7 +14,7 @@ import "leaflet/dist/leaflet.css";
 import { setMapAddress, setMapLocation } from "../Redux/map.slice";
 import { serverUrl } from "../App";
 import axios from "axios";
-import { setMyOrders } from "../Redux/user.slice";
+import { clearCart, deleteFromCartItems, setMyOrders } from "../Redux/user.slice";
 const RecenterMap = ({ location }) => {
   const map = useMap();
 
@@ -34,7 +34,7 @@ const Checkout = () => {
   const [method, setMethod] = useState("online");
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { cartItems, myOrders } = useSelector((state) => state.user);
+  const { cartItems, myOrders , userId } = useSelector((state) => state.user);
 
   const subtotal = cartItems.reduce(
     (sum, i) => sum + Number(i.price) * Number(i.quantity),
@@ -108,7 +108,7 @@ const Checkout = () => {
             name: item.name,
             price: item.price,
             quantity: item.quantity,
-            image: item.image, // ✅ Ensure image is included
+            image: item.image, 
             shop: item.shop,
             foodType: item.foodType,
           })),
@@ -118,7 +118,7 @@ const Checkout = () => {
       );
 
       dispatch(setMyOrders([...myOrders, res.data]));
-
+      dispatch(clearCart());
       navigate("/order-page");
       console.log(res.data);
     } catch (error) {

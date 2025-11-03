@@ -1,10 +1,22 @@
 import React from "react";
 import { MdPhone, MdLocationOn, MdStore } from "react-icons/md";
 import { FaMoneyBillWave } from "react-icons/fa";
+import axios from "axios";
+import { serverUrl } from "../App";
+import { useDispatch } from "react-redux";
+import { setMyOrders } from "../Redux/user.slice";
 
 const OwnerOrderCard = ({ data }) => {
+  const dispatch = useDispatch();
+
   const formatDate = (dateString) => {
-    const options = { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" };
+    const options = {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
@@ -16,7 +28,33 @@ const OwnerOrderCard = ({ data }) => {
       delivered: "bg-green-100 text-green-800 border-green-300",
       cancelled: "bg-red-100 text-red-800 border-red-300",
     };
-    return statusColors[status?.toLowerCase()] || "bg-gray-100 text-gray-800 border-gray-300";
+    return (
+      statusColors[status?.toLowerCase()] ||
+      "bg-gray-100 text-gray-800 border-gray-300"
+    );
+  };
+
+  const handleStatusChange = async (orderId, shopId, status) => {
+    try {
+      const res = await axios.patch(
+        `${serverUrl}/api/order/update-status/${orderId}/${shopId}`,
+        { status },
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        // Refresh orders after successful update
+        const updatedOrders = await axios.get(
+          `${serverUrl}/api/order/get-orders`,
+          { withCredentials: true }
+        );
+        dispatch(setMyOrders(updatedOrders.data));
+        console.log("Status updated successfully!");
+      }
+    } catch (error) {
+      console.error("Error:", error.response?.data || error.message);
+      alert("Failed to update status!");
+    }
   };
 
   return (
@@ -26,7 +64,9 @@ const OwnerOrderCard = ({ data }) => {
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm opacity-90">Order ID</p>
-            <p className="text-lg font-bold">#{data._id.slice(-8).toUpperCase()}</p>
+            <p className="text-lg font-bold">
+              #{data._id.slice(-8).toUpperCase()}
+            </p>
             <p className="text-xs opacity-80 mt-1">
               {formatDate(data.createdAt)}
             </p>
@@ -34,7 +74,9 @@ const OwnerOrderCard = ({ data }) => {
           <div className="text-right">
             <div className="flex items-center gap-2 justify-end mb-2">
               <FaMoneyBillWave />
-              <p className="text-sm font-medium">{data.paymentMethod?.toUpperCase()}</p>
+              <p className="text-sm font-medium">
+                {data.paymentMethod?.toUpperCase()}
+              </p>
             </div>
             <span
               className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
@@ -49,9 +91,13 @@ const OwnerOrderCard = ({ data }) => {
 
       {/* Customer Info Section */}
       <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-600 mb-2">Customer Details</h3>
+        <h3 className="text-sm font-semibold text-gray-600 mb-2">
+          Customer Details
+        </h3>
         <div className="space-y-1">
-          <h2 className="text-lg font-bold text-gray-900">{data.user?.fullName}</h2>
+          <h2 className="text-lg font-bold text-gray-900">
+            {data.user?.fullName}
+          </h2>
           <p className="text-sm text-gray-600">{data.user?.email}</p>
           <a
             href={`tel:${data.user?.mobile}`}
@@ -67,9 +113,12 @@ const OwnerOrderCard = ({ data }) => {
         <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-2">
           <MdLocationOn className="text-red-500" /> Delivery Address
         </h3>
-        <p className="text-sm text-gray-700 leading-relaxed">{data?.address?.text}</p>
+        <p className="text-sm text-gray-700 leading-relaxed">
+          {data?.address?.text}
+        </p>
         <p className="text-xs text-gray-500 mt-1">
-          Coordinates: {data?.address?.latitude?.toFixed(6)}, {data?.address?.longitude?.toFixed(6)}
+          Coordinates: {data?.address?.latitude?.toFixed(6)},{" "}
+          {data?.address?.longitude?.toFixed(6)}
         </p>
       </div>
 
@@ -88,9 +137,9 @@ const OwnerOrderCard = ({ data }) => {
             {/* Items List */}
             <div className="space-y-2">
               {data.shopOrder.shopOrderItems?.map((orderItem, index) => {
-                
                 const itemData = orderItem.item;
-                const itemName = itemData?.name || orderItem.name || "Unknown Item";
+                const itemName =
+                  itemData?.name || orderItem.name || "Unknown Item";
                 const itemPrice = itemData?.price || orderItem.price || 0;
                 const itemImage = itemData?.image;
                 const itemQuantity = orderItem.quantity || 1;
@@ -118,10 +167,12 @@ const OwnerOrderCard = ({ data }) => {
                       <p className="font-semibold text-gray-900">{itemName}</p>
                       <div className="flex items-center gap-3 mt-1">
                         <p className="text-sm text-gray-600">
-                          Qty: <span className="font-medium">{itemQuantity}</span>
+                          Qty:{" "}
+                          <span className="font-medium">{itemQuantity}</span>
                         </p>
                         <p className="text-sm text-gray-600">
-                          Price: <span className="font-medium">₹{itemPrice}</span>
+                          Price:{" "}
+                          <span className="font-medium">₹{itemPrice}</span>
                         </p>
                       </div>
                     </div>
@@ -144,7 +195,9 @@ const OwnerOrderCard = ({ data }) => {
                 ₹{data.shopOrder.subtotal?.toFixed(2) || "0.00"}
               </p>
             </div>
-
+            <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-2">
+              Current Status : {data.shopOrder?.status}
+            </h3>
             {/* Status Dropdown */}
             <div className="pt-3">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -152,14 +205,20 @@ const OwnerOrderCard = ({ data }) => {
               </label>
               <select
                 value={data.shopOrder?.status || "pending"}
-                onChange={(e) => console.log("Status changed to:", e.target.value)}
+                onChange={(e) => {
+                  handleStatusChange(
+                    data._id,
+                    data.shopOrder.shop._id,
+                    e.target.value
+                  );
+                }}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-medium cursor-pointer transition"
               >
                 <option value="pending">Pending</option>
-                {/* <option value="preparing">Preparing</option> */}
+                <option value="preparing">Preparing</option>
                 <option value="out-for-delivery">Out for Delivery</option>
                 <option value="delivered">Delivered</option>
-                {/* <option value="cancelled">Cancelled</option> */}
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
           </div>
