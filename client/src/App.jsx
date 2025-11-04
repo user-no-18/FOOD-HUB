@@ -20,6 +20,7 @@ import CartPage from "./Pages/CartPage";
 import Checkout from "./Pages/Checkout";
 import OrderPage from "./Pages/OrderPage";
 import useGetMyOrders from "./Hooks/useGetMyOrders";
+import useUpdateLocation from "./Hooks/useUpdateLocation";
 
 const App = () => {
   const { userData } = useSelector((state) => state.user);
@@ -30,6 +31,7 @@ const App = () => {
   useGetShopByCity();
   useGetItemByCity();
   useGetMyOrders();
+  useUpdateLocation();
   return (
     <Routes>
       <Route

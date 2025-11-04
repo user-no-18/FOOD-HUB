@@ -1,51 +1,55 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
-
-const userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema(
+  {
     fullName: {
-        type: String,
-        required: true,
-    },  
+      type: String,
+      required: true,
+    },
     email: {
-        type: String,
-        required: true,
-        unique: true,
+      type: String,
+      required: true,
+      unique: true,
 
-        match: [/\S+@\S+\.\S+/, 'is invalid'],
-        index: true,
+      match: [/\S+@\S+\.\S+/, "is invalid"],
+      index: true,
     },
     password: {
-        type: String,
-       
+      type: String,
     },
-    mobile:{
-        type: String,
-        required: true,
-       
+    mobile: {
+      type: String,
+      required: true,
     },
     role: {
-        type: String,
-        enum: ['user', 'owner', 'deliveryBoy'],
-        default: 'user',
-        required: true,
+      type: String,
+      enum: ["user", "owner", "deliveryBoy"],
+      default: "user",
+      required: true,
     },
     createdAt: {
-        type: Date,
-        default: Date.now,
+      type: Date,
+      default: Date.now,
     },
-    resetOtp:{
-        type: String,
+    resetOtp: {
+      type: String,
     },
-    isOtpVerified:{
-        type: Boolean,
-        default: false,
+    isOtpVerified: {
+      type: Boolean,
+      default: false,
     },
-    otpExpires:{
-        type: Date,
-    }
-},{ timestamps: true });
- 
-const User = mongoose.model('User', userSchema);
+    otpExpires: {
+      type: Date,
+    },
+    location: {
+      type: { type: String, enum: ["Point"], default: "Point" },
+      coordinates: { type: [Number], default: [0, 0] },
+    },
+  },
+  { timestamps: true }
+);
+userSchema.index({ location: "2dsphere" });
+const User = mongoose.model("User", userSchema);
 
 export default User;

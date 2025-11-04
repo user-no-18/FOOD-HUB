@@ -5,10 +5,11 @@ import axios from "axios";
 import { serverUrl } from "../App";
 import { useDispatch } from "react-redux";
 import { setMyOrders } from "../Redux/user.slice";
+import { useState } from "react";
 
 const OwnerOrderCard = ({ data }) => {
   const dispatch = useDispatch();
-
+  const [availableBoy, setAvailableBoy] = useState([]);
   const formatDate = (dateString) => {
     const options = {
       year: "numeric",
@@ -42,14 +43,15 @@ const OwnerOrderCard = ({ data }) => {
         { withCredentials: true }
       );
 
+      // Refresh orders after successful update
       if (res.data.success) {
-        // Refresh orders after successful update
         const updatedOrders = await axios.get(
           `${serverUrl}/api/order/get-orders`,
           { withCredentials: true }
         );
         dispatch(setMyOrders(updatedOrders.data));
-        console.log("Status updated successfully!");
+        setAvailableBoy(res.data.availableBoys);
+        console.log(availableBoy);
       }
     } catch (error) {
       console.error("Error:", error.response?.data || error.message);
@@ -59,7 +61,6 @@ const OwnerOrderCard = ({ data }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-4 hover:shadow-lg transition-shadow duration-300">
-      {/* Header Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4 text-white">
         <div className="flex justify-between items-start">
           <div>
@@ -89,7 +90,6 @@ const OwnerOrderCard = ({ data }) => {
         </div>
       </div>
 
-      {/* Customer Info Section */}
       <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <h3 className="text-sm font-semibold text-gray-600 mb-2">
           Customer Details
@@ -108,7 +108,6 @@ const OwnerOrderCard = ({ data }) => {
         </div>
       </div>
 
-      {/* Delivery Address */}
       <div className="px-6 py-4 border-b border-gray-200">
         <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-2">
           <MdLocationOn className="text-red-500" /> Delivery Address
@@ -122,11 +121,9 @@ const OwnerOrderCard = ({ data }) => {
         </p>
       </div>
 
-      {/* Shop Order Items */}
       <div className="px-6 py-4">
         {data.shopOrder && (
           <div className="space-y-3">
-            {/* Shop Name */}
             <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
               <MdStore className="text-[#ff4d2d] text-xl" />
               <h3 className="text-lg font-bold text-gray-900">
@@ -134,7 +131,6 @@ const OwnerOrderCard = ({ data }) => {
               </h3>
             </div>
 
-            {/* Items List */}
             <div className="space-y-2">
               {data.shopOrder.shopOrderItems?.map((orderItem, index) => {
                 const itemData = orderItem.item;
@@ -149,7 +145,6 @@ const OwnerOrderCard = ({ data }) => {
                     key={index}
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                   >
-                    {/* Item Image or Placeholder */}
                     {itemImage ? (
                       <img
                         src={itemImage}
@@ -162,7 +157,6 @@ const OwnerOrderCard = ({ data }) => {
                       </div>
                     )}
 
-                    {/* Item Details */}
                     <div className="flex-1">
                       <p className="font-semibold text-gray-900">{itemName}</p>
                       <div className="flex items-center gap-3 mt-1">
@@ -177,7 +171,6 @@ const OwnerOrderCard = ({ data }) => {
                       </div>
                     </div>
 
-                    {/* Item Total */}
                     <div className="text-right">
                       <p className="font-bold text-[#ff4d2d] text-lg">
                         ₹{(itemPrice * itemQuantity).toFixed(2)}
@@ -188,7 +181,6 @@ const OwnerOrderCard = ({ data }) => {
               })}
             </div>
 
-            {/* Subtotal */}
             <div className="flex justify-between items-center pt-3 border-t-2 border-gray-300">
               <p className="text-lg font-bold text-gray-900">Order Total</p>
               <p className="text-2xl font-bold text-[#ff4d2d]">
@@ -198,7 +190,6 @@ const OwnerOrderCard = ({ data }) => {
             <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-2">
               Current Status : {data.shopOrder?.status}
             </h3>
-            {/* Status Dropdown */}
             <div className="pt-3">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Update Order Status
@@ -221,6 +212,39 @@ const OwnerOrderCard = ({ data }) => {
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
+
+            {data.shopOrder?.status === "out-for-delivery" && (
+              <div className="mt-4 p-4 border-2 border-orange-200 rounded-lg bg-orange-50">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <span className="text-orange-500">🚴</span>
+                  Available Delivery Boys:
+                </h4>
+
+                {availableBoy?.length > 0 ? (
+                  <div className="space-y-2">
+                    {availableBoy.map((b, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg border border-orange-100 hover:border-orange-300 transition"
+                      >
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {b.fullName}
+                          </p>
+                          <p className="text-sm text-gray-600">{b.mobile}</p>
+                        </div>
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-gray-600 text-sm">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-500 border-t-transparent"></div>
+                    <span>Waiting for delivery boy to accept...</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

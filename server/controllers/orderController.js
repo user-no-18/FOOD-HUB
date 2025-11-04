@@ -1,6 +1,7 @@
 import Shop from "../models/shopModel.js";
 import User from "../models/userModel.js";
 import Order from "../models/orderModel.js";
+import DeliveryAssignment from "../models/deliveryAssignmentModel.js";
 
 export const placeOrder = async (req, res) => {
   try {
@@ -123,7 +124,9 @@ export const updateOrderStatus = async (req, res) => {
     const order = await Order.findById(orderId);
 
     if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
     const shopOrder = order.shopOrders.find(
@@ -131,16 +134,110 @@ export const updateOrderStatus = async (req, res) => {
     );
 
     if (!shopOrder) {
-      return res.status(404).json({ success: false, message: "Shop order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Shop order not found" });
     }
 
     shopOrder.status = status;
-    order.markModified('shopOrders');
-    await order.save();
+    order.markModified("shopOrders");
 
-    return res.status(200).json({ 
-      success: true, 
-      message: "Status updated successfully" 
+    let deliveryboyPayload = [];
+
+    if (status === "out-for-delivery") {
+      const { longitude, latitude } = order.address;
+
+      const nearbyDeliveryBoy = await User.find({
+        role: "deliveryBoy",
+        location: {
+          $near: {
+            $geometry: {
+              type: "Point",
+              coordinates: [Number(longitude), Number(latitude)],
+            },
+            $maxDistance: 5000,
+          },
+        },
+      });
+
+      if (nearbyDeliveryBoy.length === 0) {
+        await order.save();
+        return res.status(200).json({
+          success: true,
+          message:
+            "Status updated successfully, but no delivery boys found in 5km radius",
+          shopOrder: shopOrder,
+          assignedDeliveryBoy: null,
+          availableBoys: [],
+          assignment: null,
+        });
+      }
+
+      const nearbyId = nearbyDeliveryBoy.map((user) => user._id);
+
+      const busyId = await DeliveryAssignment.find({
+        assignedTo: { $in: nearbyId },
+        status: { $nin: ["delivered", "completed", "cancelled", "expired"] },
+      }).distinct("assignedTo");
+
+      const busyIdSet = new Set(busyId.map((id) => id.toString()));
+      const availableBoys = nearbyDeliveryBoy.filter(
+        (user) => !busyIdSet.has(user._id.toString())
+      );
+
+      const candidates = availableBoys.map((b) => b._id);
+
+      if (candidates.length === 0) {
+        await order.save();
+        return res.status(200).json({
+          success: true,
+          message:
+            "Status updated successfully, but all delivery boys are busy",
+          shopOrder: shopOrder,
+          assignedDeliveryBoy: null,
+          availableBoys: [],
+          assignment: null,
+        });
+      }
+
+      if (!shopOrder.assignment) {
+        const deliveryAssignment = await DeliveryAssignment.create({
+          order: order._id,
+          shop: shopOrder.shop,
+          shopOrderId: shopOrder._id,
+          broadcastedTo: candidates,
+          status: "broadcasted",
+        });
+
+        shopOrder.assignment = deliveryAssignment._id;
+      }
+
+      deliveryboyPayload = availableBoys.map((b) => ({
+        id: b._id,
+        fullName: b.fullName,
+        mobile: b.mobile,
+        longitude: b.location.coordinates[0],
+        latitude: b.location.coordinates[1],
+      }));
+    }
+
+    await order.save();
+    await order.populate("shopOrders.shop", "name");
+    await order.populate(
+      "shopOrders.assignedDeliveryBoy",
+      "fullName mobile email"
+    );
+
+    const updatedShopOrder = order.shopOrders.find(
+      (so) => so.shop._id.toString() === shopId.toString()
+    );
+
+    return res.status(200).json({
+      success: true,
+      shopOrder: updatedShopOrder,
+      assignedDeliveryBoy: updatedShopOrder?.assignedDeliveryBoy || null,
+      availableBoys: deliveryboyPayload,
+      assignment: updatedShopOrder?.assignment || null,
     });
   } catch (error) {
     console.error("Update error:", error);
