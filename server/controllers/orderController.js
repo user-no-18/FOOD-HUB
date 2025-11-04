@@ -107,9 +107,7 @@ export const getMyoders = async (req, res) => {
         ),
       }));
       return res.status(200).json(filteredOrders);
-    } else {
-      return res.status(403).json({ success: false, message: "Invalid role" });
-    }
+    } 
   } catch (error) {
     console.error("Error fetching orders:", error);
     return res.status(500).json({ success: false, message: error.message });
@@ -244,3 +242,30 @@ export const updateOrderStatus = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+export const getdeliveryBoyAssignmemts = async (req, res) => {
+  try {
+    const deliveryBoyId = req.userId;
+    const assignments = await DeliveryAssignment.find({
+      broadcastedTo: deliveryBoyId,
+      status: "broadcasted",
+    }).populate("order shop");
+
+    const formated  = assignments.map((a) => ({
+      id: a._id,
+      orderId: a.order._id,
+      shopId: a.shop._id,
+      shopName: a.shop.name,
+      orderAddress: a.order.address,
+      items: a.order.shopOrders.find(so => so.shop.toString() === a.shop._id.toString()).shopOrderItems || [],
+      subtotal: a.order.shopOrders.find(so => so.shop.toString() === a.shop._id.toString()).subtotal || 0,
+      totalAmount: a.order.totalAmount,
+      createdAt: a.createdAt,
+    }));
+    return res.status(200).json({ success: true, assignments: formated });
+  } catch (error) {
+    console.error("Error fetching delivery boy assignments:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
