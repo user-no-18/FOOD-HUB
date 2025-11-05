@@ -21,6 +21,7 @@ import Checkout from "./Pages/Checkout";
 import OrderPage from "./Pages/OrderPage";
 import useGetMyOrders from "./Hooks/useGetMyOrders";
 import useUpdateLocation from "./Hooks/useUpdateLocation";
+import TrackOrderPage from "./Pages/TrackOrderPage";
 
 const App = () => {
   const { userData } = useSelector((state) => state.user);
@@ -77,6 +78,10 @@ const App = () => {
       <Route
         path="/order-page"
         element={userData ? <OrderPage /> : <Navigate to={"/signin"} />}
+      />
+      <Route
+        path="/track-order/:orderId"
+        element={userData ? <TrackOrderPage/> : <Navigate to={"/signin"} />}
       />
      
     </Routes>

@@ -1,15 +1,17 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { MdPhone, MdLocationOn, MdStore } from "react-icons/md";
 import { FaMoneyBillWave } from "react-icons/fa";
 import axios from "axios";
 import { serverUrl } from "../App";
 import { useDispatch } from "react-redux";
 import { setMyOrders } from "../Redux/user.slice";
-import { useState } from "react";
 
 const OwnerOrderCard = ({ data }) => {
   const dispatch = useDispatch();
+  const [showNotFound, setShowNotFound] = useState(false);
   const [availableBoy, setAvailableBoy] = useState([]);
+  const [assignedDeliveryBoy, setAssignedDeliveryBoy] = useState(null);
+
   const formatDate = (dateString) => {
     const options = {
       year: "numeric",
@@ -20,6 +22,26 @@ const OwnerOrderCard = ({ data }) => {
     };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
+  // Set assigned delivery boy when data changes
+  useEffect(() => {
+    if (data.shopOrder?.assignedDeliveryBoy) {
+      setAssignedDeliveryBoy(data.shopOrder.assignedDeliveryBoy);
+    }
+  }, [data]);
+
+  // Timer for showing "not found" message
+  useEffect(() => {
+    if (!assignedDeliveryBoy && availableBoy.length === 0 && data.shopOrder?.status === "out-for-delivery") {
+      const timer = setTimeout(() => {
+        setShowNotFound(true);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    } else {
+      setShowNotFound(false);
+    }
+  }, [availableBoy, assignedDeliveryBoy, data.shopOrder?.status]);
 
   const getStatusColor = (status) => {
     const statusColors = {
@@ -43,15 +65,17 @@ const OwnerOrderCard = ({ data }) => {
         { withCredentials: true }
       );
 
-      // Refresh orders after successful update
       if (res.data.success) {
         const updatedOrders = await axios.get(
           `${serverUrl}/api/order/get-orders`,
           { withCredentials: true }
         );
         dispatch(setMyOrders(updatedOrders.data));
-        setAvailableBoy(res.data.availableBoys);
-        console.log(availableBoy);
+        
+        // Set available boys if returned
+        if (res.data.availableBoys) {
+          setAvailableBoy(res.data.availableBoys);
+        }
       }
     } catch (error) {
       console.error("Error:", error.response?.data || error.message);
@@ -187,9 +211,11 @@ const OwnerOrderCard = ({ data }) => {
                 ₹{data.shopOrder.subtotal?.toFixed(2) || "0.00"}
               </p>
             </div>
+
             <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-2">
-              Current Status : {data.shopOrder?.status}
+              Current Status: {data.shopOrder?.status}
             </h3>
+
             <div className="pt-3">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Update Order Status
@@ -215,33 +241,69 @@ const OwnerOrderCard = ({ data }) => {
 
             {data.shopOrder?.status === "out-for-delivery" && (
               <div className="mt-4 p-4 border-2 border-orange-200 rounded-lg bg-orange-50">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <span className="text-orange-500">🚴</span>
-                  Available Delivery Boys:
-                </h4>
-
-                {availableBoy?.length > 0 ? (
-                  <div className="space-y-2">
-                    {availableBoy.map((b, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-white rounded-lg border border-orange-100 hover:border-orange-300 transition"
-                      >
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {b.fullName}
-                          </p>
-                          <p className="text-sm text-gray-600">{b.mobile}</p>
-                        </div>
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                {/* ASSIGNED DELIVERY BOY - GREEN SUCCESS BOX */}
+                {data.shopOrder.assignedDeliveryBoy ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
                       </div>
-                    ))}
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-green-800 mb-1">Assigned to:</p>
+                        <p className="font-semibold text-green-900 text-lg">{data.shopOrder?.assignedDeliveryBoy?.fullName}</p>
+                        <p className="text-sm text-green-700 mt-1">{data.shopOrder?.assignedDeliveryBoy?.mobile}</p>
+                        {data.shopOrder?.assignedDeliveryBoy?.email && (
+                          <p className="text-sm text-green-600 mt-0.5">{data.shopOrder?.assignedDeliveryBoy?.email}</p>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                          Assigned
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-gray-600 text-sm">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-500 border-t-transparent"></div>
-                    <span>Waiting for delivery boy to accept...</span>
-                  </div>
+                  <>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <span className="text-orange-500">🚴</span>
+                      Available Delivery Boys:
+                    </h4>
+
+                    {availableBoy.length > 0 ? (
+                      <div className="space-y-2">
+                        {availableBoy.map((b, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-white rounded-lg border border-orange-100 hover:border-orange-300 transition"
+                          >
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {b.fullName}
+                              </p>
+                              <p className="text-sm text-gray-600">{b.mobile}</p>
+                            </div>
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : showNotFound ? (
+                      <div className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg border border-gray-200">
+                        <span className="text-4xl mb-3">😞</span>
+                        <p className="text-gray-700 font-medium text-center">
+                          Sorry, there is no delivery boy found
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-gray-600 text-sm">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-500 border-t-transparent"></div>
+                        <span>Waiting for delivery boy to accept...</span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
