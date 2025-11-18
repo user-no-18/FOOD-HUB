@@ -38,10 +38,10 @@ function CommonNav() {
               className="flex items-center gap-2 cursor-pointer group"
             >
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
-                <span className="text-white font-bold text-lg sm:text-xl">V</span>
+                {/* <span className="text-white font-bold text-lg sm:text-xl">V</span> */}
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-red-500">
-                Vingo
+                FoodHub
               </h1>
             </div>
 

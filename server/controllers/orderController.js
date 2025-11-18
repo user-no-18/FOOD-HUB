@@ -2,6 +2,7 @@ import Shop from "../models/shopModel.js";
 import User from "../models/userModel.js";
 import Order from "../models/orderModel.js";
 import DeliveryAssignment from "../models/deliveryAssignmentModel.js";
+import { sendDeliveryAcceptedMail } from "../utils/mail.js";
 
 export const placeOrder = async (req, res) => {
   try {
@@ -114,7 +115,7 @@ export const getMyoders = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-
+//this controller is used for updating order status by shop owner and assigning delivery boy
 export const updateOrderStatus = async (req, res) => {
   try {
     const { orderId, shopId } = req.params;
@@ -142,7 +143,7 @@ export const updateOrderStatus = async (req, res) => {
     order.markModified("shopOrders");
 
     let deliveryboyPayload = [];
-
+    //if status is out-for-delivery then assign delivery boy
     if (status === "out-for-delivery") {
       const { longitude, latitude } = order.address;
 
@@ -158,7 +159,7 @@ export const updateOrderStatus = async (req, res) => {
           },
         },
       });
-
+      //if no delivery boy found within range then return message
       if (nearbyDeliveryBoy.length === 0) {
         await order.save();
         return res.status(200).json({
@@ -243,7 +244,7 @@ export const updateOrderStatus = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-
+// This controller is used for fetching deliveryboy orders assigned to him with status broadcasted
 export const getdeliveryBoyAssignmemts = async (req, res) => {
   try {
     const deliveryBoyId = req.userId;
@@ -275,7 +276,7 @@ export const getdeliveryBoyAssignmemts = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-
+// Accept an order assignment
 export const acceptOrder = async (req, res) => {
   try {
     const { assignmentId } = req.params;
@@ -331,6 +332,8 @@ export const acceptOrder = async (req, res) => {
   }
 };
 
+// Get current order assigned to delivery
+
 export const getCurrentOrder = async (req, res) => {
   try {
     const order = await DeliveryAssignment.findOne({
@@ -346,8 +349,8 @@ export const getCurrentOrder = async (req, res) => {
 
     if (!order) {
       return res
-        .status(404)
-        .json({ success: false, message: "No current order found" });
+        .status(200)
+        .json({ success: false, message: "Order Delivered Or No order found" });
     }
     if (!order.order) {
       return res
@@ -390,6 +393,7 @@ export const getCurrentOrder = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+// this controller is used for fetching order by ID with proper population and formatting and connected to frontend with orderDetails page
 
 export const getOrderbyID = async (req, res) => {
   try {
@@ -408,12 +412,10 @@ export const getOrderbyID = async (req, res) => {
         .json({ success: false, message: "Order not found" });
     }
 
-    
     order.shopOrders = order.shopOrders.map((shopOrder) => {
       return {
         ...shopOrder,
         shopOrderItems: shopOrder.shopOrderItems.map((item) => ({
-         
           itemId: item.item?._id || item.item || null,
           name: item.name,
           price: item.price,
@@ -429,5 +431,91 @@ export const getOrderbyID = async (req, res) => {
     return res
       .status(500)
       .json({ success: false, message: "Error fetching order by ID" });
+  }
+};
+
+export const sendDeliveryOtp = async (req, res) => {
+  try {
+    const { shopOrderId } = req.body;
+    const order = await Order.findOne({
+      "shopOrders._id": shopOrderId,
+    }).populate("user");
+    console.log("Fetched order:", order);
+    const shopOrder = order.shopOrders?.id(shopOrderId);
+    if (!shopOrder)
+      return res
+        .status(404)
+        .json({ message: "enter valid order/shopOrder id" });
+
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    shopOrder.deliveryOtp = otp;
+    shopOrder.otpExpires = Date.now() + 5 * 60 * 1000;
+    await order.save();
+    await sendDeliveryAcceptedMail(order.user, otp);
+    return res
+      .status(200)
+      .json({ message: `otp sent to ${order?.user?.fullName}` });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `send deliveryOtp error : ${error}` });
+  }
+};
+
+export const verifyDeliveryOtp = async (req, res) => {
+  try {
+    const { shopOrderId, otp } = req.body;
+
+    if (!shopOrderId || !otp) {
+      return res
+        .status(400)
+        .json({ message: "shopOrderId and otp are required" });
+    }
+
+    const order = await Order.findOne({
+      "shopOrders._id": shopOrderId,
+    }).populate("user");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const shopOrder = order.shopOrders.id(shopOrderId);
+
+    if (!shopOrder) {
+      return res.status(404).json({ message: "Shop order not found" });
+    }
+
+    if (!shopOrder.deliveryOtp) {
+      return res.status(400).json({ message: "OTP not generated yet" });
+    }
+
+    if (
+      shopOrder.deliveryOtp !== otp ||
+      !shopOrder.otpExpires ||
+      shopOrder.otpExpires < Date.now()
+    ) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    shopOrder.status = "delivered";
+    shopOrder.deliveredAt = Date.now();
+
+    shopOrder.deliveryOtp = null;
+    shopOrder.otpExpires = null;
+
+    await order.save();
+
+    await DeliveryAssignment.deleteOne({
+      shop: shopOrder.shop,
+      order: order._id,
+      assignedTo: shopOrder.assignedDeliveryBoy,
+    });
+
+    return res.status(200).json({ message: "Order delivered successfully" });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `verify deliveryOtp error : ${error}` });
   }
 };

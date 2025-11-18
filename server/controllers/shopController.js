@@ -9,9 +9,7 @@ export const createEditShop = async (req, res) => {
 
     // Upload new image if provided
     if (req.file && req.file.path) {
-      console.log("Uploading file:", req.file.path);
       image = await uploadOnCloudinary(req.file.path);
-      console.log("Image uploaded:", image);
     }
 
     let shop = await Shop.findOne({ owner: req.userId });
@@ -77,9 +75,12 @@ export const getShopByCity = async (req, res) => {
     const { city } = req.params;
     if (!city) return res.status(400).json({ message: "City is required" });
 
-    const shops = await Shop.find({ city: { $regex: new RegExp(`^${city}$`, "i") } }).populate("items");
+    const shops = await Shop.find({
+      city: { $regex: new RegExp(`^${city}$`, "i") },
+    }).populate("items");
 
-    if (!shops.length) return res.status(404).json({ message: "No shops found" });
+    if (!shops.length)
+      return res.status(404).json({ message: "No shops found" });
 
     res.status(200).json({ success: true, count: shops.length, shops });
   } catch (err) {

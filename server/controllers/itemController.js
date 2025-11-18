@@ -128,7 +128,7 @@ export const deleteItemById = async (req, res) => {
     }
 
     // Remove item reference from shop.items
-    shop.items = shop.items.filter(i => i.toString() !== item._id.toString());
+    shop.items = shop.items.filter((i) => i.toString() !== item._id.toString());
 
     // Save shop and populate items
     await shop.save();
@@ -143,7 +143,9 @@ export const deleteItemById = async (req, res) => {
       item,
     });
   } catch (error) {
-    return res.status(500).json({ message: `Delete item error: ${error.message}` });
+    return res
+      .status(500)
+      .json({ message: `Delete item error: ${error.message}` });
   }
 };
 
@@ -187,6 +189,22 @@ export const getItemByCity = async (req, res) => {
     console.error("Error fetching items by city:", error);
     return res.status(500).json({
       message: "Server error while fetching items by city",
+      error: error.message,
+    });
+  }
+};
+
+export const getItemByShop = async (req, res) => {
+  try {
+    const { shopId } = req.params;
+    const shop = await Shop.findById(shopId).populate("items");
+    if (!shop) {
+      return res.status(404).json({ message: "No shops found " });
+    }
+    return res.status(200).json({ shop, items: shop.items });
+  } catch (error) {
+      return res.status(500).json({
+      message: "Server error while fetching items by shop",
       error: error.message,
     });
   }

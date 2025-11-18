@@ -1,6 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { setAddress } from "./user.slice";
 
+//This redux slice manages the map state, including location coordinates and address.
+
 const mapSlice = createSlice({
   name: "map",
   initialState: {

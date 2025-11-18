@@ -10,6 +10,8 @@ const DeliveryBoyDashboard = () => {
   const [assignments, setAssignments] = useState([]);
   const [currentOrder, setCurrentOrder] = useState();
   const [showOtp, setShowOtp] = useState(false);
+  const [otp, setOtp] = useState(""); // Fixed: Initialize with empty string instead of undefined
+  
   const getAssignments = async () => {
     try {
       const res = await axios.get(`${serverUrl}/api/order/get-assignments`, {
@@ -48,15 +50,50 @@ const DeliveryBoyDashboard = () => {
       console.error("Error accepting order:", error);
     }
   };
+  
+  const sendOtp = async () => {
+    try {
+      const res = await axios.post(
+        `${serverUrl}/api/order/send-otp/`,
+        { shopOrderId: currentOrder.shopOrder._id },
+        {
+          withCredentials: true,
+        }
+      );
+      setShowOtp(true);
+      setOtp(""); // Reset OTP input when showing the form
+      console.log("Accept Order Response:", res.data);
+    } catch (error) {
+      console.error("Error accepting order:", error);
+    }
+  };
+  
+  const verifyOtp = async () => {
+    try {
+      const res = await axios.post(
+        `${serverUrl}/api/order/verify-otp/`,
+        {
+          shopOrderId: currentOrder?.shopOrder?._id, // Fixed: was shopId, should be shopOrderId
+          otp,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+      // Reset after successful verification
+      setShowOtp(false);
+      setOtp("");
+      await getCurrentOrder(); // Refresh current order
+      console.log("Verify OTP Response:", res.data);
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+    }
+  };
 
   useEffect(() => {
     getAssignments();
     getCurrentOrder();
   }, [userData]);
-
-  const handleSendOTP = () => {
-    setShowOtp(true);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -158,37 +195,41 @@ const DeliveryBoyDashboard = () => {
             </div>
             <DeliveryBoyTracking data={currentOrder} />
             {!showOtp ? (
-  <button
-    onClick={handleSendOTP}
-    className="mt-4 w-full bg-green-500 text-white font-semibold py-2 px-4 rounded-xl shadow 
+              <button
+                onClick={sendOtp}
+                className="mt-4 w-full bg-green-500 text-white font-semibold py-2 px-4 rounded-xl shadow 
     hover:bg-green-600 active:scale-95 transition-all duration-200"
-  >
-    Mark As Delivered
-  </button>
-) : (
-  <div className="mt-4 p-4 border rounded-xl bg-gray-50">
-    <p className="text-sm font-semibold m-2">
-      Enter OTP sent to
-      <span className="text-xl font-bold text-rose-500 m-2">
-        {currentOrder.user.fullName}
-      </span>
-    </p>
-    <input
-      type="text"
-      placeholder="Enter OTP"
-      className="w-full border border-gray-300 rounded-lg p-2 mb-3"
-    />
-    <div className="flex gap-4">
-      <button
-        className="flex-1 bg-green-500 text-white font-semibold py-2 px-4 rounded-xl shadow
-        hover:bg-green-600 active:scale-95 transition-all duration-200"
-      >
-        Submit OTP
-      </button>
-    </div>
-  </div>
-)}
-
+              >
+                Mark As Delivered
+              </button>
+            ) : (
+              <div className="mt-4 p-4 border rounded-xl bg-gray-50">
+                <p className="text-sm font-semibold m-2">
+                  Enter OTP sent to
+                  <span className="text-xl font-bold text-rose-500 m-2">
+                    {currentOrder.user.fullName}
+                  </span>
+                </p>
+                <input
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  type="text"
+                  placeholder="Enter OTP"
+                  maxLength={4} // Added: Limit to 4 digits
+                  className="w-full border border-gray-300 rounded-lg p-2 mb-3"
+                />
+                <div className="flex gap-4">
+                  <button
+                    onClick={verifyOtp}
+                    disabled={otp.length !== 4} // Added: Disable if OTP not 4 digits
+                    className="flex-1 bg-green-500 text-white font-semibold py-2 px-4 rounded-xl shadow
+        hover:bg-green-600 active:scale-95 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    Submit OTP
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

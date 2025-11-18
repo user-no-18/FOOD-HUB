@@ -22,6 +22,7 @@ import OrderPage from "./Pages/OrderPage";
 import useGetMyOrders from "./Hooks/useGetMyOrders";
 import useUpdateLocation from "./Hooks/useUpdateLocation";
 import TrackOrderPage from "./Pages/TrackOrderPage";
+import Shop from "./Pages/Shop";
 
 const App = () => {
   const { userData } = useSelector((state) => state.user);
@@ -82,6 +83,10 @@ const App = () => {
       <Route
         path="/track-order/:orderId"
         element={userData ? <TrackOrderPage/> : <Navigate to={"/signin"} />}
+      />
+      <Route
+        path="/shop-items/:shopId"
+        element={userData ? <Shop/> : <Navigate to={"/signin"} />}
       />
      
     </Routes>

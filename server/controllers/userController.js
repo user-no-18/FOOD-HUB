@@ -21,6 +21,7 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
+// Controller function to update the user's location
 export const updateUserLocation = async (req, res) => {
   try {
     const { lon, lat } = req.body;

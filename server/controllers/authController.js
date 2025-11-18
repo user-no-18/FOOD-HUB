@@ -105,8 +105,8 @@ export const signOut = (req, res) => {
 //this function will generate otp and send to user email by calling sendOTPMail function from mail.js
 export const sendOtp = async (req, res) => {
   try {
-    const { email } = req.body; // email from frontend
-    const user = await User.findOne({ email }); // check if user with this email exists
+    const { email } = req.body; 
+    const user = await User.findOne({ email }); 
     if (!user) {
       console.log("User with this email does not exist");
       return res
@@ -114,8 +114,8 @@ export const sendOtp = async (req, res) => {
         .json({ message: "User with this email does not exist" });
     }
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    user.resetOtp = otp; //storing otp in database  
-    user.otpExpires = Date.now() + 5 * 60 * 1000; // 5 minutes from now
+    user.resetOtp = otp; 
+    user.otpExpires = Date.now() + 5 * 60 * 1000; 
     user.isOtpVerified = false; 
     await user.save();
     await sendOTPMail(email, otp);
