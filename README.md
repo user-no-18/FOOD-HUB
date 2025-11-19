@@ -581,13 +581,7 @@ Contributions are welcome! Please follow these steps:
 - **Developer**:Debjyoti Roy
 
 
----
 
-## 📞 Support
-
-For support, email [debjyoti2409@gmail.com](mailto:debjyoti2409@gmail.com) or open an issue in the GitHub repository.
-
----
 
 ## 🙏 Acknowledgments
 
