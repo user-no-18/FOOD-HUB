@@ -581,8 +581,7 @@ Contributions are welcome! Please follow these steps:
 - **Developer**:Debjyoti Roy
 
 
-
-
+---
 ## 🙏 Acknowledgments
 
 - React and Redux communities
