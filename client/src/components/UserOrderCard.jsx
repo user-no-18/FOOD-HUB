@@ -60,7 +60,7 @@ const UserOrderCard = ({ data }) => {
       <div className="p-6 space-y-4">
         {data.shopOrders?.map((shopOrder, shopIndex) => (
           <div key={shopIndex} className="space-y-3">
-            {/* Shop Header */}
+           
             <div className="flex items-center justify-between pb-3 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <FaStore className="text-[#ff4d2d] text-lg" />
@@ -131,7 +131,7 @@ const UserOrderCard = ({ data }) => {
           </div>
         </div>
 
-        {/* Total Section + Track Order Button */}
+       
         <div className="pt-4 border-t-2 border-gray-300">
           <div className="flex justify-between items-center">
             <p className="text-lg font-bold text-gray-900">Total Amount</p>
@@ -141,7 +141,7 @@ const UserOrderCard = ({ data }) => {
           </div>
         </div>
 
-        {/* Track Order Button / Status Messages */}
+        
         <div className="pt-4">
           {data.shopOrders?.[0]?.status === "delivered" ? (
             <div className="bg-green-50 border border-green-300 rounded-lg p-4 text-center">

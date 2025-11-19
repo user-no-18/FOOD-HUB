@@ -87,7 +87,7 @@ const EditItem = () => {
       const updatedItem = result.data;
       dispatch(setShopData(updatedItem.shop || {}));
       
-      // Trigger refresh for user dashboard
+   
       dispatch(triggerItemsRefresh());
       
       navigate(-1);

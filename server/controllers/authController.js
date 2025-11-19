@@ -132,7 +132,7 @@ export const verifyOtp = async (req, res) => {
     if (!user || !user.resetOtp || user.otpExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
-    //compare otp
+    //comparing otp
     if(otp != user.resetOtp){
       return res.status(400).json({ message: "Invalid OTP" });
     }

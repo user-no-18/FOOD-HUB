@@ -33,7 +33,7 @@ const userSlice = createSlice({
     setItemsInMyCity: (state, action) => {
       state.itemsInMyCity = action.payload;
     },
-    // Add this action to trigger refresh
+    
     triggerItemsRefresh: (state) => {
       state.refreshCounter += 1;
     },

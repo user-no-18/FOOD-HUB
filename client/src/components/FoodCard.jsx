@@ -45,9 +45,7 @@ const FoodCard = ({ data }) => {
 
   return (
     <div className="w-full rounded-2xl border-2 border-[#ff4d2d] bg-white shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col">
-      {/* Image Section */}
       <div className="relative w-full h-[170px] flex justify-center items-center bg-white">
-        {/* Food Type Icon */}
         <div className="absolute top-3 right-3 bg-white rounded-full p-1 shadow">
           {data.foodType === "veg" ? (
             <FaLeaf className="text-green-600 text-lg" />
@@ -56,7 +54,6 @@ const FoodCard = ({ data }) => {
           )}
         </div>
 
-        {/* Item Image */}
         <img
           src={data.image}
           alt={data.name || "Food item"}
@@ -64,13 +61,11 @@ const FoodCard = ({ data }) => {
         />
       </div>
 
-      {/* Item Info */}
       <div className="flex-1 flex flex-col p-4">
         <h1 className="font-semibold text-gray-900 text-base truncate">
           {data.name}
         </h1>
 
-        {/* Rating */}
         <div className="flex items-center gap-1 mt-2">
           {renderStars()}
           <span className="text-gray-600 text-sm ml-1">
@@ -78,7 +73,6 @@ const FoodCard = ({ data }) => {
           </span>
         </div>
 
-        {/* Price + Quantity + Cart */}
         <div className="mt-3 flex justify-between items-center">
           <span className="text-lg font-bold text-[#ff4d2d]">
             ₹{data.price || "N/A"}
@@ -100,7 +94,6 @@ const FoodCard = ({ data }) => {
               +
             </button>
 
-            {/* Cart Button */}
             <button
               onClick={() => handleAddToCart()}
               className={`p-2 rounded-full transition ${

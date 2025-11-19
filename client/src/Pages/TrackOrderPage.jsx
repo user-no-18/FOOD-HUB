@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { serverUrl } from "../App";
 import { useParams } from "react-router-dom";
-import DeliveryBoyTracking from "../components/DeliveryBoyTracking"; // ✅ adjust path if needed
+import DeliveryBoyTracking from "../components/DeliveryBoyTracking"; 
 
 const TrackOrderPage = () => {
   const { orderId } = useParams();
@@ -86,7 +86,7 @@ const TrackOrderPage = () => {
               </p>
             </div>
 
-            {/* ✅ Show map if delivery boy assigned */}
+           
             {shopOrder.assignedDeliveryBoy && (
               <div className="mt-4">
                 <DeliveryBoyTracking
@@ -95,10 +95,10 @@ const TrackOrderPage = () => {
                       lat: shopOrder.assignedDeliveryBoy.location
                         ?.coordinates?.[1],
                       lng: shopOrder.assignedDeliveryBoy.location
-                        ?.coordinates?.[0], // ⚠️ Changed 'lon' to 'lng'
+                        ?.coordinates?.[0], 
                     },
                     deliveryAddress: {
-                      // ⚠️ Changed 'customerLocation' to 'deliveryAddress'
+                      
                       latitude: order.address?.latitude,
                       longitude: order.address?.longitude,
                     },

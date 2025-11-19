@@ -3,7 +3,7 @@ import User from "../models/userModel.js";
 // Controller function to fetch the current user's data
 export const getCurrentUser = async (req, res) => {
   try {
-    // req.userId is set by the isAuth middleware
+
     const user = await User.findById(req.userId).select("-password");
     console.log("Type of userId:", typeof req.userId);
     if (!user) {
@@ -21,7 +21,7 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
-// Controller function to update the user's location
+// This function to update the user's location
 export const updateUserLocation = async (req, res) => {
   try {
     const { lon, lat } = req.body;

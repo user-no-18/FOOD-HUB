@@ -13,7 +13,7 @@ const OwnerDashboard = () => {
   const { shopData } = useSelector((state) => state.owner);
   const navigate = useNavigate();
 
-  // Helper component to display shop details (repeated logic)
+  
   const ShopDetails = ({ children }) => (
     <div className="w-full flex flex-col items-center gap-6 px-4 sm:px-6">
       <h1 className="text-2xl sm:text-3xl text-gray-900 flex items-center gap-3 mt-8 text-center">
@@ -58,9 +58,9 @@ const OwnerDashboard = () => {
 
   return (
     <div className="w-full min-h-screen bg-[#fff9f6] flex flex-col items-center">
-      {/* <OwnerNav /> */}
+      
       <CommonNav />
-      {/* 1. Shop NOT FOUND (Add Shop prompt) */}
+      
       {!shopData && (
         <div className="flex justify-center items-center p-4 sm:p-6">
           <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
@@ -84,7 +84,7 @@ const OwnerDashboard = () => {
         </div>
       )}
 
-      {/* 2. Shop FOUND, but NO ITEMS (Add Item prompt) */}
+     
       {shopData && shopData.items?.length === 0 && (
         <ShopDetails>
           <div className="flex items-center justify-center w-full">
@@ -108,10 +108,10 @@ const OwnerDashboard = () => {
         </ShopDetails>
       )}
 
-      {/* 3. Shop FOUND, WITH ITEMS (Display Items) */}
+     
       {shopData && shopData.items?.length > 0 && (
         <ShopDetails>
-          {/* Add Item Button (optional, but useful when items exist) */}
+          
           <button
             className="inline-flex items-center gap-2 bg-orange-500 text-white px-5 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow-md hover:bg-orange-600 transition-colors"
             onClick={() => navigate("/additem")}

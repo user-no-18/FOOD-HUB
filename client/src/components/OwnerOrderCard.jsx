@@ -23,14 +23,14 @@ const OwnerOrderCard = ({ data }) => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Set assigned delivery boy when data changes
+  
   useEffect(() => {
     if (data.shopOrder?.assignedDeliveryBoy) {
       setAssignedDeliveryBoy(data.shopOrder.assignedDeliveryBoy);
     }
   }, [data]);
 
-  // Timer for showing "not found" message
+
   useEffect(() => {
     if (!assignedDeliveryBoy && availableBoy.length === 0 && data.shopOrder?.status === "out-for-delivery") {
       const timer = setTimeout(() => {
@@ -241,7 +241,7 @@ const OwnerOrderCard = ({ data }) => {
 
             {data.shopOrder?.status === "out-for-delivery" && (
               <div className="mt-4 p-4 border-2 border-orange-200 rounded-lg bg-orange-50">
-                {/* ASSIGNED DELIVERY BOY - GREEN SUCCESS BOX */}
+                
                 {data.shopOrder.assignedDeliveryBoy ? (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div className="flex items-start gap-3">

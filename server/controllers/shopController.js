@@ -1,13 +1,13 @@
 import Shop from "../models/shopModel.js";
 import uploadOnCloudinary from "../utils/cloudinary.js";
 
-// Create or Edit Shop
+
 export const createEditShop = async (req, res) => {
   try {
     const { name, city, state, address } = req.body;
     let image;
 
-    // Upload new image if provided
+
     if (req.file && req.file.path) {
       image = await uploadOnCloudinary(req.file.path);
     }
@@ -15,7 +15,7 @@ export const createEditShop = async (req, res) => {
     let shop = await Shop.findOne({ owner: req.userId });
 
     if (!shop) {
-      // Creating new shop - image is required
+     
       if (!image) {
         return res
           .status(400)
@@ -31,16 +31,16 @@ export const createEditShop = async (req, res) => {
         image,
       });
     } else {
-      // Updating existing shop
+      
       const updateData = { name, city, state, address };
 
-      // Only update image if new one uploaded
+      
       if (image) updateData.image = image;
 
       shop = await Shop.findByIdAndUpdate(shop._id, updateData, { new: true });
     }
 
-    // Always fetch full shop data with image
+    
     shop = await Shop.findById(shop._id).populate("owner").populate("items");
 
     return res.status(201).json(shop);
@@ -52,7 +52,7 @@ export const createEditShop = async (req, res) => {
   }
 };
 
-// Get current user's shop
+
 export const getMyShop = async (req, res) => {
   try {
     const shop = await Shop.findOne({ owner: req.userId })

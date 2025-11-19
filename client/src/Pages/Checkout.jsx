@@ -218,7 +218,7 @@ const Checkout = () => {
               </div>
             </button>
 
-            {/* UPI + Card */}
+           
             <button
               type="button"
               onClick={() => setMethod("online")}
@@ -243,7 +243,7 @@ const Checkout = () => {
             </button>
           </div>
         </section>
-        {/* Order Summary */}
+        
         <section>
           <h2 className="text-lg font-semibold mb-3 text-gray-800">
             Order Summary

@@ -9,7 +9,7 @@ import { setShopData } from "../Redux/owner.slice";
 import { ClipLoader } from "react-spinners";
 
 const AddItem = () => {
-  // component state
+
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");

@@ -32,7 +32,7 @@ function CommonNav() {
       {userData.role === "user" && (
         <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm z-[9999] border-b border-gray-100">
           <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-12 h-16 sm:h-18 max-w-7xl mx-auto">
-            {/* Logo */}
+           
             <div
               onClick={() => navigate("/")}
               className="flex items-center gap-2 cursor-pointer group"
@@ -75,7 +75,7 @@ function CommonNav() {
                 )}
               </button>
 
-              {/* Profile */}
+              
               <div className="relative">
                 <button
                   onClick={() => setShowInfo((p) => !p)}
@@ -124,7 +124,7 @@ function CommonNav() {
             </div>
           </div>
 
-          {/* Mobile Search */}
+          
           {showSearch && (
             <div className="md:hidden bg-white border-t border-gray-100 px-4 py-3 shadow-sm animate-in slide-in-from-top-2 duration-200">
               <div className="flex items-center gap-3 bg-gray-50 rounded-full px-4 py-2.5 border border-gray-200">
@@ -163,9 +163,9 @@ function CommonNav() {
               </h1>
             </div>
 
-            {/* Owner Controls */}
+            
             <div className="flex items-center gap-3 sm:gap-4">
-              {/* Add Food Item */}
+              
               <button
                 onClick={() => navigate("/additem")}
                 className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white font-medium text-sm shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
@@ -180,7 +180,7 @@ function CommonNav() {
                 <FiPlus size={20} />
               </button>
 
-              {/* Pending Orders */}
+              
               <button
                 onClick={() => navigate("/my-orders")}
                 className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-red-600 font-medium text-sm border border-gray-200 hover:bg-gray-200 transition-all duration-200 relative"
@@ -205,7 +205,7 @@ function CommonNav() {
                 )}
               </button>
 
-              {/* Profile */}
+              
               <div className="relative">
                 <button
                   onClick={() => setShowInfo((p) => !p)}
@@ -240,7 +240,7 @@ function CommonNav() {
       {userData.role === "deliveryBoy" && (
         <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm z-[9999] border-b border-gray-100">
           <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 sm:h-18 max-w-7xl mx-auto">
-            {/* Logo */}
+           
             <div
               onClick={() => navigate("/")}
               className="flex items-center gap-2 cursor-pointer group"
@@ -253,9 +253,9 @@ function CommonNav() {
               </h1>
             </div>
 
-            {/* Right Section */}
+            
             <div className="flex items-center gap-3 sm:gap-4">
-              {/* My Orders Button */}
+             
               <button
                 onClick={() => navigate("/my-orders")}
                 className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 text-red-600 font-medium text-sm border border-red-200 hover:bg-red-100 transition-all duration-200"
@@ -270,7 +270,7 @@ function CommonNav() {
                 <TbReceipt2 size={20} />
               </button>
 
-              {/* Profile */}
+              
               <div className="relative">
                 <button
                   onClick={() => setShowInfo((p) => !p)}

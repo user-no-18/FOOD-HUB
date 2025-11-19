@@ -10,7 +10,7 @@ const DeliveryBoyDashboard = () => {
   const [assignments, setAssignments] = useState([]);
   const [currentOrder, setCurrentOrder] = useState();
   const [showOtp, setShowOtp] = useState(false);
-  const [otp, setOtp] = useState(""); // Fixed: Initialize with empty string instead of undefined
+  const [otp, setOtp] = useState(""); 
   
   const getAssignments = async () => {
     try {
@@ -61,7 +61,7 @@ const DeliveryBoyDashboard = () => {
         }
       );
       setShowOtp(true);
-      setOtp(""); // Reset OTP input when showing the form
+      setOtp("");
       console.log("Accept Order Response:", res.data);
     } catch (error) {
       console.error("Error accepting order:", error);
@@ -73,17 +73,17 @@ const DeliveryBoyDashboard = () => {
       const res = await axios.post(
         `${serverUrl}/api/order/verify-otp/`,
         {
-          shopOrderId: currentOrder?.shopOrder?._id, // Fixed: was shopId, should be shopOrderId
+          shopOrderId: currentOrder?.shopOrder?._id, 
           otp,
         },
         {
           withCredentials: true,
         }
       );
-      // Reset after successful verification
+      
       setShowOtp(false);
       setOtp("");
-      await getCurrentOrder(); // Refresh current order
+      await getCurrentOrder(); 
       console.log("Verify OTP Response:", res.data);
     } catch (error) {
       console.error("Error verifying OTP:", error);
@@ -99,9 +99,9 @@ const DeliveryBoyDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <CommonNav />
 
-      {/* Main Content */}
+     
       <div className="pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {/* Welcome Card */}
+        
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -123,7 +123,7 @@ const DeliveryBoyDashboard = () => {
               </p>
             </div>
 
-            {/* Status Badge */}
+           
             <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-full w-fit">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-sm font-medium text-green-700">Active</span>
@@ -215,13 +215,13 @@ const DeliveryBoyDashboard = () => {
                   onChange={(e) => setOtp(e.target.value)}
                   type="text"
                   placeholder="Enter OTP"
-                  maxLength={4} // Added: Limit to 4 digits
+                  maxLength={4} 
                   className="w-full border border-gray-300 rounded-lg p-2 mb-3"
                 />
                 <div className="flex gap-4">
                   <button
                     onClick={verifyOtp}
-                    disabled={otp.length !== 4} // Added: Disable if OTP not 4 digits
+                    disabled={otp.length !== 4} 
                     className="flex-1 bg-green-500 text-white font-semibold py-2 px-4 rounded-xl shadow
         hover:bg-green-600 active:scale-95 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >

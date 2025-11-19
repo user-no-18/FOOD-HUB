@@ -31,19 +31,19 @@ const UserDashboard = () => {
 
   return (
     <div className="min-h-screen bg-white w-full overflow-x-hidden">
-      {/* Navbar */}
+     
       <CommonNav />
     
-      {/* Spacer for fixed navbar */}
+      
       <div className="h-[64px]"></div>
 
-      {/* Inspiration Section - Display ALL Categories */}
+    
       <div className="w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4">
         <h1 className="text-gray-800 text-lg sm:text-xl md:text-2xl font-semibold mb-4 px-1">
           Inspiration for your first order
         </h1>
 
-        {/* Category Scroll - Map ALL categories */}
+        
         <div className="w-full overflow-x-auto scroll-smooth no-scrollbar">
           <div className="flex gap-3 sm:gap-4 pb-3">
             {categories.map((cate, index) => (
@@ -58,7 +58,7 @@ const UserDashboard = () => {
         </div>
       </div>
       
-{/* Shops in My City Section */}
+
 {shopInMyCity && shopInMyCity.shops && shopInMyCity.shops.length > 0 && (
   <div className="w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4">
     <h1 className="text-gray-800 text-lg sm:text-xl md:text-2xl font-semibold mb-4 px-1">
@@ -80,7 +80,7 @@ const UserDashboard = () => {
   </div>
 )}
 
-      {/* Suggested Items Section */}
+      
       <div className="w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4 pb-8">
         <h1 className="text-gray-800 text-lg sm:text-xl md:text-2xl font-semibold mb-4 px-1">
           {selectedCategory === 'All' ? 'Suggested Food Items' : `${selectedCategory} Items`}

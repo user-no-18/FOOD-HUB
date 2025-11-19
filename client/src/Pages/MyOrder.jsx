@@ -6,11 +6,11 @@ import { MdKeyboardBackspace } from "react-icons/md";
 import OwnerOrdersDemo from "../components/OwnerOrderCard";
 
 const MyOrderCard = () => {
-  const { userData, myOrders } = useSelector((state) => state.user); // Changed from myOrder to myOrders
+  const { userData, myOrders } = useSelector((state) => state.user); 
   const navigate = useNavigate();
 
   return (
-    <div className="w-full min-h-screen bg-[#fff9f6] flex justify-center px-4"> {/* Fixed opening quote */}
+    <div className="w-full min-h-screen bg-[#fff9f6] flex justify-center px-4"> 
       <div className="w-full max-w-[800px] p-4">
         <div
           className="absolute top-[20px] left-[20px] z-[10] cursor-pointer"
@@ -21,7 +21,7 @@ const MyOrderCard = () => {
         
         <h1 className="text-2xl font-bold mb-4">My Orders</h1>
         
-        {/* Check if myOrders exists and has items */}
+        
         {myOrders && myOrders.length > 0 ? (
           myOrders.map((order, index) =>
             userData?.role === "user" ? (
