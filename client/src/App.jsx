@@ -6,7 +6,9 @@ import ForgotPassword from "./Pages/ForgotPassword";
 import Home from "./Pages/Home";
 import useGetCurrentUser from "./Hooks/UseGetCurrentUser";
 import { useSelector } from "react-redux";
+//Backend url 
 export const serverUrl = "http://localhost:5000";
+
 import { useNavigate } from "react-router-dom";
 import useGetCity from "./Hooks/useGetCity";
 import useGetShop from "./Hooks/useGetMyShop";

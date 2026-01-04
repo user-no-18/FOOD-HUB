@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaLocationDot } from "react-icons/fa6";
 import { IoIosSearch } from "react-icons/io";
 import { RxCross2 } from "react-icons/rx";
@@ -7,14 +7,19 @@ import { TbReceipt2 } from "react-icons/tb";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setUserData } from "../Redux/user.slice";
+import axios from "axios";
+import { serverUrl } from "../App";
+import { setSearchItems } from "../Redux/user.slice";
 
 function CommonNav() {
-  const { city, userData, pendingOrdersCount } = useSelector(
+  const { city, userData, pendingOrdersCount  } = useSelector(
     (state) => state.user
   );
+
+  const [query, setQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
-  const [input, setInput] = useState("");
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -23,6 +28,26 @@ function CommonNav() {
     dispatch(setUserData(null));
     navigate("/login");
   };
+  const handleSearchItems = async () => {
+    try {
+      const result = await axios.get(
+        `${serverUrl}/api/item/search-item?query=${query}&city=${city}`,
+        { withCredentials: true }
+      );
+      dispatch(setSearchItems(result.data));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+  if (query.trim()) {
+    handleSearchItems();
+  } else {
+    dispatch(setSearchItems([]));
+  }
+}, [query]);
+
 
   if (!userData) return null;
 
@@ -32,7 +57,6 @@ function CommonNav() {
       {userData.role === "user" && (
         <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm z-[9999] border-b border-gray-100">
           <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-12 h-16 sm:h-18 max-w-7xl mx-auto">
-           
             <div
               onClick={() => navigate("/")}
               className="flex items-center gap-2 cursor-pointer group"
@@ -56,8 +80,8 @@ function CommonNav() {
                 type="text"
                 placeholder="Search for food or restaurant..."
                 className="w-full outline-none text-gray-700 text-sm placeholder:text-gray-400 bg-transparent"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
               />
             </div>
 
@@ -75,7 +99,6 @@ function CommonNav() {
                 )}
               </button>
 
-              
               <div className="relative">
                 <button
                   onClick={() => setShowInfo((p) => !p)}
@@ -124,7 +147,6 @@ function CommonNav() {
             </div>
           </div>
 
-          
           {showSearch && (
             <div className="md:hidden bg-white border-t border-gray-100 px-4 py-3 shadow-sm animate-in slide-in-from-top-2 duration-200">
               <div className="flex items-center gap-3 bg-gray-50 rounded-full px-4 py-2.5 border border-gray-200">
@@ -137,8 +159,8 @@ function CommonNav() {
                   type="text"
                   placeholder="Search food..."
                   className="w-full outline-none text-sm bg-transparent text-gray-700 placeholder:text-gray-400"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
                 />
               </div>
             </div>
@@ -146,6 +168,7 @@ function CommonNav() {
         </nav>
       )}
 
+         
       {/* OWNER NAV */}
       {userData.role === "owner" && (
         <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm z-[9999] border-b border-gray-100">
@@ -156,16 +179,16 @@ function CommonNav() {
               className="flex items-center gap-2 cursor-pointer group"
             >
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
-                <span className="text-white font-bold text-lg sm:text-xl">F</span>
+                <span className="text-white font-bold text-lg sm:text-xl">
+                  F
+                </span>
               </div>
               <h1 className="text-xl sm:text-2xl font-bold text-red-500">
                 Food-HuB
               </h1>
             </div>
 
-            
             <div className="flex items-center gap-3 sm:gap-4">
-              
               <button
                 onClick={() => navigate("/additem")}
                 className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white font-medium text-sm shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
@@ -180,7 +203,6 @@ function CommonNav() {
                 <FiPlus size={20} />
               </button>
 
-              
               <button
                 onClick={() => navigate("/my-orders")}
                 className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-red-600 font-medium text-sm border border-gray-200 hover:bg-gray-200 transition-all duration-200 relative"
@@ -205,7 +227,6 @@ function CommonNav() {
                 )}
               </button>
 
-              
               <div className="relative">
                 <button
                   onClick={() => setShowInfo((p) => !p)}
@@ -240,22 +261,21 @@ function CommonNav() {
       {userData.role === "deliveryBoy" && (
         <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm z-[9999] border-b border-gray-100">
           <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 sm:h-18 max-w-7xl mx-auto">
-           
             <div
               onClick={() => navigate("/")}
               className="flex items-center gap-2 cursor-pointer group"
             >
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
-                <span className="text-white font-bold text-lg sm:text-xl">V</span>
+                <span className="text-white font-bold text-lg sm:text-xl">
+                  V
+                </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-red-500">
                 Vingo
               </h1>
             </div>
 
-            
             <div className="flex items-center gap-3 sm:gap-4">
-             
               <button
                 onClick={() => navigate("/my-orders")}
                 className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 text-red-600 font-medium text-sm border border-red-200 hover:bg-red-100 transition-all duration-200"
@@ -270,7 +290,6 @@ function CommonNav() {
                 <TbReceipt2 size={20} />
               </button>
 
-              
               <div className="relative">
                 <button
                   onClick={() => setShowInfo((p) => !p)}

@@ -205,3 +205,58 @@ export const getItemByShop = async (req, res) => {
     });
   }
 };
+
+
+export const searchItems = async (req, res) => {
+  try {
+    const { query, city } = req.query;
+
+   
+    if (!query || !city) {
+      return res.status(400).json({
+        success: false,
+        message: "query and city are required",
+      });
+    }
+
+
+    const trimmedQuery = query.trim();
+    const trimmedCity = city.trim();
+
+    
+    const shops = await Shop.find({
+      city: { $regex: `^${trimmedCity}$`, $options: "i" },
+    }).select("_id");
+
+    if (shops.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No shops found in this city",
+      });
+    }
+
+    const shopIds = shops.map((shop) => shop._id);
+
+    
+    const items = await Item.find({
+      shop: { $in: shopIds },
+      $or: [
+        { name: { $regex: trimmedQuery, $options: "i" } },
+        { category: { $regex: trimmedQuery, $options: "i" } },
+      ],
+    }).populate("shop", "name image");
+
+ 
+    return res.status(200).json({
+      success: true,
+      count: items.length,
+      items,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error while searching items",
+      error: error.message,
+    });
+  }
+};

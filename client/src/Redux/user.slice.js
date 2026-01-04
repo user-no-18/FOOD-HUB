@@ -12,7 +12,8 @@ const userSlice = createSlice({
     refreshCounter: 0,
     cartItems: [],
     totalAmount: 0,
-    myOrders:[],
+    myOrders: [],
+    searchItems: [],
   },
   reducers: {
     setUserData: (state, action) => {
@@ -33,7 +34,7 @@ const userSlice = createSlice({
     setItemsInMyCity: (state, action) => {
       state.itemsInMyCity = action.payload;
     },
-    
+
     triggerItemsRefresh: (state) => {
       state.refreshCounter += 1;
     },
@@ -69,10 +70,12 @@ const userSlice = createSlice({
       state.myOrders = action.payload;
     },
     clearCart: (state) => {
-  state.cartItems = [];
-  state.totalAmount = 0;
-},
-
+      state.cartItems = [];
+      state.totalAmount = 0;
+    },
+    setSearchItems: (state, action) => {
+      state.searchItems = action.payload;
+    },
   },
 });
 export const {
@@ -88,5 +91,6 @@ export const {
   deleteFromCartItems,
   setMyOrders,
   clearCart,
+  setSearchItems,
 } = userSlice.actions;
 export default userSlice.reducer;
