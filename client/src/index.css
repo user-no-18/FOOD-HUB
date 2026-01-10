@@ -1,10 +1,41 @@
-
 @import "tailwindcss";
-/* Hide scrollbar but keep scroll functionality */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+/* Funnel Display – scoped utility */
+.font-funnel {
+  font-family: "Funnel Display", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  font-weight: 800;
 }
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE/Edge */
-  scrollbar-width: none;     /* Firefox */
+/* Story Script – brand accent font */
+.font-story {
+  font-family: "Story Script", cursive;
+  font-weight: 400;
+}
+
+/* Base reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Apply global font */
+html,
+body {
+  font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Prevent horizontal scroll */
+html,
+body,
+#root {
+  overflow-x: hidden;
+}
+
+/* Media safety */
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }

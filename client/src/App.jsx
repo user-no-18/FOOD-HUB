@@ -25,7 +25,7 @@ import useGetMyOrders from "./Hooks/useGetMyOrders";
 import useUpdateLocation from "./Hooks/useUpdateLocation";
 import TrackOrderPage from "./Pages/TrackOrderPage";
 import Shop from "./Pages/Shop";
-
+import BaseHome from "./Temp/Base";
 const App = () => {
   const { userData } = useSelector((state) => state.user);
 
@@ -89,6 +89,10 @@ const App = () => {
       <Route
         path="/shop-items/:shopId"
         element={userData ? <Shop/> : <Navigate to={"/signin"} />}
+      />
+      <Route
+        path="/base"
+        element={<BaseHome />}
       />
      
     </Routes>

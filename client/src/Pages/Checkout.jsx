@@ -15,6 +15,7 @@ import { setMapAddress, setMapLocation } from "../Redux/map.slice";
 import { serverUrl } from "../App";
 import axios from "axios";
 import { clearCart, deleteFromCartItems, setMyOrders } from "../Redux/user.slice";
+
 const RecenterMap = ({ location }) => {
   const map = useMap();
 
@@ -28,13 +29,14 @@ const RecenterMap = ({ location }) => {
 
   return null;
 };
+
 const Checkout = () => {
   const { location, mapAddress } = useSelector((state) => state.map);
   const [addressInput, setAddressInput] = useState("");
   const [method, setMethod] = useState("online");
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { cartItems, myOrders , userId } = useSelector((state) => state.user);
+  const { cartItems, myOrders, userId, userData } = useSelector((state) => state.user);
 
   const subtotal = cartItems.reduce(
     (sum, i) => sum + Number(i.price) * Number(i.quantity),
@@ -42,6 +44,7 @@ const Checkout = () => {
   );
   const deliveryFee = subtotal > 500 ? 0 : 40;
   const total = subtotal + deliveryFee;
+
   const onDragEnd = (event) => {
     const marker = event.target;
     const position = marker.getLatLng();
@@ -50,6 +53,7 @@ const Checkout = () => {
     );
     getAddressbyLating(position.lat, position.lng);
   };
+
   const getAddressbyLating = async (latitude, longitude) => {
     try {
       const res = await axios.get(
@@ -62,6 +66,7 @@ const Checkout = () => {
       console.log(error);
     }
   };
+
   const getCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition(async (position) => {
       const latitude = position.coords.latitude;
@@ -71,9 +76,10 @@ const Checkout = () => {
       getAddressbyLating(latitude, longitude);
     });
   };
+
   const getLatLngByAddress = async () => {
     try {
-      console.log(" calling api :");
+      console.log("calling api:");
       const result = await axios.get(
         `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(
           addressInput
@@ -88,6 +94,7 @@ const Checkout = () => {
       console.log(error);
     }
   };
+
   useEffect(() => {
     setAddressInput(mapAddress);
   }, [mapAddress]);
@@ -108,7 +115,7 @@ const Checkout = () => {
             name: item.name,
             price: item.price,
             quantity: item.quantity,
-            image: item.image, 
+            image: item.image,
             shop: item.shop,
             foodType: item.foodType,
           })),
@@ -117,15 +124,103 @@ const Checkout = () => {
         { withCredentials: true }
       );
 
-      dispatch(setMyOrders([...myOrders, res.data]));
-      dispatch(clearCart());
-      navigate("/order-page");
-      console.log(res.data);
+      // If COD
+      if (method === "cod") {
+        dispatch(setMyOrders([...myOrders, res.data]));
+        dispatch(clearCart());
+        navigate("/order-page");
+        console.log(res.data);
+        return;
+      }
+
+      // For online payment backend returns { razorOrder, order_id: newOrder._id }
+      const orderId = res.data.order_id;
+      const razorOrder = res.data.razorOrder;
+
+      // Open the razorpay checkout window
+      await openRazorpayWindow(orderId, razorOrder);
     } catch (error) {
-      console.error(error);
-      alert("Order failed!");
+      console.error("Place order error:", error);
+      alert("Order failed! " + (error.response?.data?.message || error.message));
     }
   };
+
+  const openRazorpayWindow = async (orderId, razorOrder) => {
+    try {
+      // Check if Razorpay is loaded
+      if (!window.Razorpay) {
+        throw new Error("Razorpay SDK not loaded. Please refresh the page.");
+      }
+
+      if (!razorOrder || !razorOrder.id) {
+        throw new Error("Razorpay order object missing or malformed.");
+      }
+
+      // Prepare options for Razorpay checkout
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,  
+        amount: razorOrder.amount,
+        currency: razorOrder.currency ,
+        name: "Food Hub",
+        description: "Order Payment",
+        order_id: razorOrder.id,
+        handler: async function (response) {
+          
+          try {
+          
+            const verifyRes = await axios.post(
+              `${serverUrl}/api/order/verify-order`,
+              {
+                razorpayPaymentId: response.razorpay_payment_id,
+                orderId: orderId,
+              },
+              { withCredentials: true }
+            );
+
+           
+            const paidOrder = verifyRes.data;
+
+            
+            dispatch(setMyOrders([...myOrders, paidOrder]));
+            dispatch(clearCart());
+            navigate("/order-page");
+
+            console.log("Payment verified and order saved:", paidOrder);
+          
+          } catch (verifyError) {
+            console.error("Payment verification failed:", verifyError);
+           
+          }
+        },
+        prefill: {
+          name: userData?.fullName || "Name",
+          email: userData?.email || "",
+          contact: userData?.mobile || "",
+        },
+        notes: {
+          orderId: orderId,
+        },
+        theme: {
+          color: "#ff4d2d",
+        },
+      };
+
+      // Open the checkout
+      const rzp = new window.Razorpay(options);
+
+      // Handle payment failure
+      rzp.on("payment.failed", function (response) {
+        console.error("Razorpay payment failed:", response);
+        
+      });
+
+      rzp.open();
+    } catch (err) {
+      console.error("Error opening Razorpay window:", err);
+      alert("Unable to open payment window: " + err.message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#fff9f6] flex items-center justify-center p-6">
       <div
@@ -137,6 +232,7 @@ const Checkout = () => {
 
       <div className="w-full max-w-[900px] bg-white rounded-2xl shadow-xl p-6 space-y-6">
         <h1 className="text-2xl font-bold text-gray-800">Checkout</h1>
+        
         <section>
           <h2 className="text-lg font-semibold mb-2 flex items-center gap-2 text-gray-800">
             <FaMapMarkerAlt className="text-[#ff4d2d]" /> Delivery Location
@@ -191,7 +287,8 @@ const Checkout = () => {
             </div>
           </div>
         </section>
-        {/* //payment method */}
+
+        {/* Payment method */}
         <section>
           <h2 className="text-lg font-semibold mb-3 text-gray-800">
             Payment Method
@@ -218,7 +315,7 @@ const Checkout = () => {
               </div>
             </button>
 
-           
+            {/* Online Payment */}
             <button
               type="button"
               onClick={() => setMethod("online")}
@@ -243,7 +340,7 @@ const Checkout = () => {
             </button>
           </div>
         </section>
-        
+
         <section>
           <h2 className="text-lg font-semibold mb-3 text-gray-800">
             Order Summary
@@ -275,10 +372,10 @@ const Checkout = () => {
             </div>
           </div>
         </section>
+
         <button
           onClick={handlePlaceOrder}
           className="w-full bg-[#ff4d2d] hover:bg-[#e64526] text-white py-3 rounded-xl font-semibold"
-          // onClick={handlePlaceOrder}
         >
           {method === "cod" ? "Place Order" : "Pay & Place Order"}
         </button>

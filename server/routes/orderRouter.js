@@ -1,12 +1,13 @@
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
-import { acceptOrder, getCurrentOrder, getdeliveryBoyAssignmemts, getMyoders, getOrderbyID, placeOrder, sendDeliveryOtp, updateOrderStatus, verifyDeliveryOtp } from '../controllers/orderController.js';
+import { acceptOrder, getCurrentOrder, getdeliveryBoyAssignmemts, getMyoders, getOrderbyID, placeOrder, sendDeliveryOtp, updateOrderStatus, verifyDeliveryOtp , verifyPayment } from '../controllers/orderController.js';
 
 
 
 const orderRouter = express.Router();
 
 orderRouter.post('/place-order',isAuth, placeOrder);
+orderRouter.post('/verify-order',isAuth, verifyPayment);
 orderRouter.get('/get-orders',isAuth, getMyoders);
 orderRouter.get('/get-assignments',isAuth, getdeliveryBoyAssignmemts);
 orderRouter.get('/get-current-order', isAuth, getCurrentOrder);

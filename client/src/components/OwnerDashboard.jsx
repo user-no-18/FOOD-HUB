@@ -1,129 +1,169 @@
 import React from "react";
-
 import { useSelector } from "react-redux";
-import { FaUtensils } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { FaPen } from "react-icons/fa";
-import { FaPlus } from "react-icons/fa";
+import { 
+  FaUtensils, 
+  FaPen, 
+  FaPlus, 
+  FaStore, 
+  FaMapMarkerAlt, 
+  FaCalendarAlt 
+} from "react-icons/fa";
 import OwnerItemcard from "./OwnerItemcard";
 import CommonNav from "./CommonNav";
-
 
 const OwnerDashboard = () => {
   const { shopData } = useSelector((state) => state.owner);
   const navigate = useNavigate();
 
-  
-  const ShopDetails = ({ children }) => (
-    <div className="w-full flex flex-col items-center gap-6 px-4 sm:px-6">
-      <h1 className="text-2xl sm:text-3xl text-gray-900 flex items-center gap-3 mt-8 text-center">
-        <FaUtensils className="text-[#ff4d2d] w-14 h-14" />
-        Welcome to {shopData.name}
-      </h1>
+  // --- Components ---
 
-      {/* Shop Info Card */}
-      <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-orange-100 hover:shadow-2xl transition-all duration-300 w-full max-w-3xl relative">
-        <button
-          onClick={() => navigate("/editshop")}
-          className="absolute top-4 right-4 bg-[#ff4d2d] text-white p-2 rounded-full shadow-md hover:bg-orange-600 transition-colors z-10"
-        >
-          <FaPen />
-        </button>
+  const EmptyState = ({ title, description, btnText, onClick, icon: Icon }) => (
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-white border border-gray-200 border-dashed rounded-xl w-full">
+      <div className="bg-orange-50 p-4 rounded-full mb-4">
+        <Icon className="text-orange-500 w-8 h-8" />
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-500 max-w-sm mb-6 text-sm">{description}</p>
+      <button
+        onClick={onClick}
+        className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-lg font-medium transition-all shadow-sm text-sm"
+      >
+        <FaPlus className="text-xs" /> {btnText}
+      </button>
+    </div>
+  );
 
-        <img
-          src={shopData.image} 
-          alt={shopData.name || "Shop Image"}
-          className="w-full h-48 sm:h-64 object-cover"
-        />
-        <div className="p-4 sm:p-6">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-            {shopData.name}
-          </h2>
-          <p className="text-gray-500 mb-4">
-            {shopData.city}, {shopData.state}
-          </p>
-          <p className="text-gray-700 mb-4">{shopData.address}</p>
-          <div className="text-xs sm:text-sm text-gray-400">
-            <p>Created: {new Date(shopData.createdAt).toLocaleString()}</p>
-            <p>
-              Last Updated: {new Date(shopData.updatedAt).toLocaleString()}
-            </p>
+  const ShopHeaderCard = () => (
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-8">
+      <div className="flex flex-col md:flex-row">
+        {/* Shop Image */}
+        <div className="w-full md:w-64 h-48 md:h-auto relative bg-gray-100 shrink-0">
+          <img
+            src={shopData.image || "https://via.placeholder.com/300"}
+            alt={shopData.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        {/* Shop Content */}
+        <div className="p-6 flex-1 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  {shopData.name}
+                </h1>
+                <div className="flex items-center gap-2 text-gray-500 text-sm mt-1">
+                  <FaMapMarkerAlt className="text-orange-500" />
+                  <span>{shopData.address}, {shopData.city}, {shopData.state}</span>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => navigate("/editshop")}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+              >
+                <FaPen className="text-xs" /> Edit Details
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-4 pt-6 border-t border-gray-100 text-xs text-gray-400">
+            <div className="flex items-center gap-1">
+              <FaCalendarAlt /> Created: {new Date(shopData.createdAt).toLocaleDateString()}
+            </div>
+            <div className="flex items-center gap-1">
+              <FaCalendarAlt /> Updated: {new Date(shopData.updatedAt).toLocaleDateString()}
+            </div>
+            {/* Mobile Edit Button */}
+            <button
+                onClick={() => navigate("/editshop")}
+                className="ml-auto sm:hidden text-orange-600 font-medium hover:underline"
+            >
+              Edit Shop
+            </button>
           </div>
         </div>
       </div>
-      
-      {children}
     </div>
   );
 
   return (
-    <div className="w-full min-h-screen bg-[#fff9f6] flex flex-col items-center">
-      
+    <div className="min-h-screen bg-gray-50">
       <CommonNav />
-      
-      {!shopData && (
-        <div className="flex justify-center items-center p-4 sm:p-6">
-          <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex flex-col items-center text-center">
-              <FaUtensils className="text-[#ff4d2d] w-16 h-16 sm:w-20 sm:h-20 mb-4" />
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-                Add Your Restaurant
-              </h2>
-              <p className="text-gray-600 mb-4 text-sm sm:text-base">
-                Join our food delivery platform and reach thousands of hungry
-                customers every day.
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* State 1: No Shop Created */}
+        {!shopData ? (
+          <div className="max-w-2xl mx-auto mt-10">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
+              <div className="bg-orange-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <FaStore className="text-orange-600 w-10 h-10" />
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-3">Setup Your Restaurant</h1>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                Join our platform to manage your menu, track orders, and reach new customers. It only takes a few minutes.
               </p>
               <button
-                className="bg-[#ff4d2d] text-white px-5 sm:px-6 py-2 rounded-full font-medium shadow-md hover:bg-orange-600 transition-colors duration-200"
+                className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all transform active:scale-95"
                 onClick={() => navigate("/editshop")}
               >
-                Get Started
+                Create Restaurant Profile
               </button>
             </div>
           </div>
-        </div>
-      )}
+        ) : (
+          /* State 2 & 3: Shop Exists */
+          <div className="fade-in">
+            {/* 1. Header Section */}
+            <div className="mb-6">
+               <h2 className="text-lg font-semibold text-gray-800">Overview</h2>
+            </div>
+            
+            <ShopHeaderCard />
 
-     
-      {shopData && shopData.items?.length === 0 && (
-        <ShopDetails>
-          <div className="flex items-center justify-center w-full">
-            <div className="bg-white border border-orange-200 shadow-lg rounded-xl p-6 sm:p-8 w-full max-w-xl text-center hover:shadow-2xl transition-all duration-300">
-              <FaUtensils className="text-orange-500 text-4xl sm:text-5xl mx-auto mb-4" />
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-                Add Your Food Items
-              </h2>
-              <p className="text-gray-600 mb-6 text-sm sm:text-base">
-                Share your delicious creations with our customers by adding them
-                to the menu.
-              </p>
-              <button
-                className="inline-flex items-center gap-2 bg-orange-500 text-white px-5 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow-md hover:bg-orange-600 transition-colors"
+            {/* 2. Menu Management Section */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Menu Items</h2>
+                <p className="text-sm text-gray-500">Manage your food catalog</p>
+              </div>
+              
+              {shopData.items?.length > 0 && (
+                <button
+                  onClick={() => navigate("/additem")}
+                  className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors text-sm"
+                >
+                  <FaPlus /> Add New Item
+                </button>
+              )}
+            </div>
+
+            {/* 3. Items Grid Content */}
+            {(!shopData.items || shopData.items.length === 0) ? (
+              <EmptyState 
+                title="Your menu is empty"
+                description="Start adding delicious items to your menu so customers can order."
+                btnText="Add First Item"
+                icon={FaUtensils}
                 onClick={() => navigate("/additem")}
-              >
-                <FaPlus /> Add Item
-              </button>
-            </div>
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {shopData.items.map((item) => (
+                  // Assuming OwnerItemcard can handle being in a grid cell
+                  // Ensure OwnerItemcard has w-full class
+                  <div key={item._id} className="w-full"> 
+                    <OwnerItemcard data={item} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </ShopDetails>
-      )}
-
-     
-      {shopData && shopData.items?.length > 0 && (
-        <ShopDetails>
-          
-          <button
-            className="inline-flex items-center gap-2 bg-orange-500 text-white px-5 sm:px-6 py-2 sm:py-3 rounded-full font-semibold shadow-md hover:bg-orange-600 transition-colors"
-            onClick={() => navigate("/additem")}
-          >
-            <FaPlus /> Add New Item
-          </button>
-
-          {shopData.items.map((item) => (
-            <OwnerItemcard key={item._id} data={item} />
-          ))}
-        </ShopDetails>
-      )}
+        )}
+      </main>
     </div>
   );
 };

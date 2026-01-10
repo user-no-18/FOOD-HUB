@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { MdPhone, MdLocationOn, MdStore } from "react-icons/md";
-import { FaMoneyBillWave } from "react-icons/fa";
+import { FaMoneyBillWave, FaCheckCircle, FaClock, FaTimesCircle } from "react-icons/fa";
 import axios from "axios";
 import { serverUrl } from "../App";
 import { useDispatch } from "react-redux";
@@ -23,20 +23,17 @@ const OwnerOrderCard = ({ data }) => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  
   useEffect(() => {
     if (data.shopOrder?.assignedDeliveryBoy) {
       setAssignedDeliveryBoy(data.shopOrder.assignedDeliveryBoy);
     }
   }, [data]);
 
-
   useEffect(() => {
     if (!assignedDeliveryBoy && availableBoy.length === 0 && data.shopOrder?.status === "out-for-delivery") {
       const timer = setTimeout(() => {
         setShowNotFound(true);
       }, 5000);
-
       return () => clearTimeout(timer);
     } else {
       setShowNotFound(false);
@@ -51,10 +48,44 @@ const OwnerOrderCard = ({ data }) => {
       delivered: "bg-green-100 text-green-800 border-green-300",
       cancelled: "bg-red-100 text-red-800 border-red-300",
     };
-    return (
-      statusColors[status?.toLowerCase()] ||
-      "bg-gray-100 text-gray-800 border-gray-300"
-    );
+    return statusColors[status?.toLowerCase()] || "bg-gray-100 text-gray-800 border-gray-300";
+  };
+
+  // Get payment status configuration
+  const getPaymentStatusConfig = () => {
+    const method = data.paymentMethod;
+    const isPaid = data.payment;
+    console.log("Payment Method:", method, "Is Paid:", isPaid);
+    if (method === "cod") {
+      return {
+        icon: <FaMoneyBillWave className="text-lg" />,
+        text: "Cash on Delivery",
+        bgColor: "bg-orange-50",
+        borderColor: "border-orange-200",
+        textColor: "text-orange-700",
+        badgeColor: "bg-orange-100 text-orange-800"
+      };
+    }
+    
+    if (isPaid) {
+      return {
+        icon: <FaCheckCircle className="text-lg" />,
+        text: "Payment Completed",
+        bgColor: "bg-green-50",
+        borderColor: "border-green-200",
+        textColor: "text-green-700",
+        badgeColor: "bg-green-100 text-green-800"
+      };
+    } else {
+      return {
+        icon: <FaTimesCircle className="text-lg" />,
+        text: "Payment Pending",
+        bgColor: "bg-red-50",
+        borderColor: "border-red-200",
+        textColor: "text-red-700",
+        badgeColor: "bg-red-100 text-red-800"
+      };
+    }
   };
 
   const handleStatusChange = async (orderId, shopId, status) => {
@@ -72,7 +103,6 @@ const OwnerOrderCard = ({ data }) => {
         );
         dispatch(setMyOrders(updatedOrders.data));
         
-        // Set available boys if returned
         if (res.data.availableBoys) {
           setAvailableBoy(res.data.availableBoys);
         }
@@ -83,26 +113,19 @@ const OwnerOrderCard = ({ data }) => {
     }
   };
 
+  const paymentConfig = getPaymentStatusConfig();
+
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-4 hover:shadow-lg transition-shadow duration-300">
+      {/* Header Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4 text-white">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm opacity-90">Order ID</p>
-            <p className="text-lg font-bold">
-              #{data._id.slice(-8).toUpperCase()}
-            </p>
-            <p className="text-xs opacity-80 mt-1">
-              {formatDate(data.createdAt)}
-            </p>
+            <p className="text-lg font-bold">#{data._id.slice(-8).toUpperCase()}</p>
+            <p className="text-xs opacity-80 mt-1">{formatDate(data.createdAt)}</p>
           </div>
           <div className="text-right">
-            <div className="flex items-center gap-2 justify-end mb-2">
-              <FaMoneyBillWave />
-              <p className="text-sm font-medium">
-                {data.paymentMethod?.toUpperCase()}
-              </p>
-            </div>
             <span
               className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
                 data.shopOrder?.status
@@ -114,6 +137,41 @@ const OwnerOrderCard = ({ data }) => {
         </div>
       </div>
 
+      {/* Payment Status Section */}
+      <div className={`px-6 py-3 ${paymentConfig.bgColor} border-b ${paymentConfig.borderColor}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={paymentConfig.textColor}>
+              {paymentConfig.icon}
+            </div>
+            <div>
+              <p className={`text-sm font-semibold ${paymentConfig.textColor}`}>
+                {paymentConfig.text}
+              </p>
+              {data.paymentMethod === "online" && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${paymentConfig.badgeColor} font-medium`}>
+                    {data.paymentMethod.toUpperCase()}
+                  </span>
+                  {data.razorpayPaymentId && (
+                    <span className="text-xs text-gray-600">
+                      ID: {data.razorpayPaymentId.slice(-8)}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-600 font-medium">Total Amount</p>
+            <p className={`text-xl font-bold ${paymentConfig.textColor}`}>
+              ₹{data.totalAmount?.toFixed(2) || data.shopOrder?.subtotal?.toFixed(2) || "0.00"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Customer Details */}
       <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <h3 className="text-sm font-semibold text-gray-600 mb-2">
           Customer Details
@@ -132,6 +190,7 @@ const OwnerOrderCard = ({ data }) => {
         </div>
       </div>
 
+      {/* Delivery Address */}
       <div className="px-6 py-4 border-b border-gray-200">
         <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-2">
           <MdLocationOn className="text-red-500" /> Delivery Address
@@ -145,6 +204,7 @@ const OwnerOrderCard = ({ data }) => {
         </p>
       </div>
 
+      {/* Shop Order Details */}
       <div className="px-6 py-4">
         {data.shopOrder && (
           <div className="space-y-3">
@@ -155,11 +215,11 @@ const OwnerOrderCard = ({ data }) => {
               </h3>
             </div>
 
+            {/* Items List */}
             <div className="space-y-2">
               {data.shopOrder.shopOrderItems?.map((orderItem, index) => {
                 const itemData = orderItem.item;
-                const itemName =
-                  itemData?.name || orderItem.name || "Unknown Item";
+                const itemName = itemData?.name || orderItem.name || "Unknown Item";
                 const itemPrice = itemData?.price || orderItem.price || 0;
                 const itemImage = itemData?.image;
                 const itemQuantity = orderItem.quantity || 1;
@@ -185,12 +245,10 @@ const OwnerOrderCard = ({ data }) => {
                       <p className="font-semibold text-gray-900">{itemName}</p>
                       <div className="flex items-center gap-3 mt-1">
                         <p className="text-sm text-gray-600">
-                          Qty:{" "}
-                          <span className="font-medium">{itemQuantity}</span>
+                          Qty: <span className="font-medium">{itemQuantity}</span>
                         </p>
                         <p className="text-sm text-gray-600">
-                          Price:{" "}
-                          <span className="font-medium">₹{itemPrice}</span>
+                          Price: <span className="font-medium">₹{itemPrice}</span>
                         </p>
                       </div>
                     </div>
@@ -205,6 +263,7 @@ const OwnerOrderCard = ({ data }) => {
               })}
             </div>
 
+            {/* Order Total */}
             <div className="flex justify-between items-center pt-3 border-t-2 border-gray-300">
               <p className="text-lg font-bold text-gray-900">Order Total</p>
               <p className="text-2xl font-bold text-[#ff4d2d]">
@@ -212,10 +271,7 @@ const OwnerOrderCard = ({ data }) => {
               </p>
             </div>
 
-            <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-2">
-              Current Status: {data.shopOrder?.status}
-            </h3>
-
+            {/* Status Update */}
             <div className="pt-3">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Update Order Status
@@ -239,9 +295,9 @@ const OwnerOrderCard = ({ data }) => {
               </select>
             </div>
 
+            {/* Delivery Assignment Section */}
             {data.shopOrder?.status === "out-for-delivery" && (
               <div className="mt-4 p-4 border-2 border-orange-200 rounded-lg bg-orange-50">
-                
                 {data.shopOrder.assignedDeliveryBoy ? (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div className="flex items-start gap-3">
@@ -281,9 +337,7 @@ const OwnerOrderCard = ({ data }) => {
                             className="flex items-center justify-between p-3 bg-white rounded-lg border border-orange-100 hover:border-orange-300 transition"
                           >
                             <div>
-                              <p className="font-medium text-gray-900">
-                                {b.fullName}
-                              </p>
+                              <p className="font-medium text-gray-900">{b.fullName}</p>
                               <p className="text-sm text-gray-600">{b.mobile}</p>
                             </div>
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
