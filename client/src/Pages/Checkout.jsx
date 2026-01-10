@@ -14,7 +14,11 @@ import "leaflet/dist/leaflet.css";
 import { setMapAddress, setMapLocation } from "../Redux/map.slice";
 import { serverUrl } from "../App";
 import axios from "axios";
-import { clearCart, deleteFromCartItems, setMyOrders } from "../Redux/user.slice";
+import {
+  clearCart,
+  deleteFromCartItems,
+  setMyOrders,
+} from "../Redux/user.slice";
 
 const RecenterMap = ({ location }) => {
   const map = useMap();
@@ -36,7 +40,9 @@ const Checkout = () => {
   const [method, setMethod] = useState("online");
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { cartItems, myOrders, userId, userData } = useSelector((state) => state.user);
+  const { cartItems, myOrders, userId, userData } = useSelector(
+    (state) => state.user
+  );
 
   const subtotal = cartItems.reduce(
     (sum, i) => sum + Number(i.price) * Number(i.quantity),
@@ -119,12 +125,12 @@ const Checkout = () => {
             shop: item.shop,
             foodType: item.foodType,
           })),
-          subtotal,
+          deliveryFee,
+          totalAmount: total,
         },
         { withCredentials: true }
       );
 
-      // If COD
       if (method === "cod") {
         dispatch(setMyOrders([...myOrders, res.data]));
         dispatch(clearCart());
@@ -133,21 +139,21 @@ const Checkout = () => {
         return;
       }
 
-      // For online payment backend returns { razorOrder, order_id: newOrder._id }
+      //  backend returns { razorOrder, order_id: newOrder._id }
       const orderId = res.data.order_id;
       const razorOrder = res.data.razorOrder;
 
-      // Open the razorpay checkout window
       await openRazorpayWindow(orderId, razorOrder);
     } catch (error) {
       console.error("Place order error:", error);
-      alert("Order failed! " + (error.response?.data?.message || error.message));
+      alert(
+        "Order failed! " + (error.response?.data?.message || error.message)
+      );
     }
   };
 
   const openRazorpayWindow = async (orderId, razorOrder) => {
     try {
-      // Check if Razorpay is loaded
       if (!window.Razorpay) {
         throw new Error("Razorpay SDK not loaded. Please refresh the page.");
       }
@@ -156,18 +162,15 @@ const Checkout = () => {
         throw new Error("Razorpay order object missing or malformed.");
       }
 
-      // Prepare options for Razorpay checkout
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,  
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: razorOrder.amount,
-        currency: razorOrder.currency ,
+        currency: razorOrder.currency,
         name: "Food Hub",
         description: "Order Payment",
         order_id: razorOrder.id,
         handler: async function (response) {
-          
           try {
-          
             const verifyRes = await axios.post(
               `${serverUrl}/api/order/verify-order`,
               {
@@ -177,19 +180,15 @@ const Checkout = () => {
               { withCredentials: true }
             );
 
-           
             const paidOrder = verifyRes.data;
 
-            
             dispatch(setMyOrders([...myOrders, paidOrder]));
             dispatch(clearCart());
             navigate("/order-page");
 
             console.log("Payment verified and order saved:", paidOrder);
-          
           } catch (verifyError) {
             console.error("Payment verification failed:", verifyError);
-           
           }
         },
         prefill: {
@@ -205,13 +204,11 @@ const Checkout = () => {
         },
       };
 
-      // Open the checkout
       const rzp = new window.Razorpay(options);
 
-      // Handle payment failure
+      // payment failure
       rzp.on("payment.failed", function (response) {
         console.error("Razorpay payment failed:", response);
-        
       });
 
       rzp.open();
@@ -232,7 +229,7 @@ const Checkout = () => {
 
       <div className="w-full max-w-[900px] bg-white rounded-2xl shadow-xl p-6 space-y-6">
         <h1 className="text-2xl font-bold text-gray-800">Checkout</h1>
-        
+
         <section>
           <h2 className="text-lg font-semibold mb-2 flex items-center gap-2 text-gray-800">
             <FaMapMarkerAlt className="text-[#ff4d2d]" /> Delivery Location

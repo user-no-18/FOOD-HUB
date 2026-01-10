@@ -14,8 +14,9 @@ let instance = new Razorpay({
 
 export const placeOrder = async (req, res) => {
   try {
-    const { cartItems, address, paymentMethod } = req.body;
+    const { cartItems, address, paymentMethod, totalAmount } = req.body;
 
+    // Validation
     if (!cartItems || cartItems.length === 0) {
       return res.status(400).json({ success: false, message: "Cart is empty" });
     }
@@ -27,6 +28,14 @@ export const placeOrder = async (req, res) => {
       });
     }
 
+    if (!totalAmount || totalAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Total amount is required",
+      });
+    }
+
+    // Group cart items by shop
     const groupedByShop = {};
     cartItems.forEach((item) => {
       const shopId = item.shop;
@@ -34,12 +43,15 @@ export const placeOrder = async (req, res) => {
       groupedByShop[shopId].push(item);
     });
 
+    // Create shop orders
     const shopOrders = await Promise.all(
       Object.keys(groupedByShop).map(async (shopId) => {
         const shop = await Shop.findById(shopId).populate("owner");
         if (!shop) throw new Error(`Shop not found: ${shopId}`);
 
         const items = groupedByShop[shopId];
+        
+        // Calculate subtotal for this shop
         const subtotal = items.reduce(
           (sum, i) => sum + Number(i.price) * Number(i.quantity),
           0
@@ -60,15 +72,16 @@ export const placeOrder = async (req, res) => {
         };
       })
     );
-    let totalAmount = shopOrders.reduce((sum, so) => sum + so.subtotal, 0);
 
+    // For online payment, create Razorpay order
     if (paymentMethod === "online") {
       const razorOrder = await instance.orders.create({
-        amount: totalAmount * 100,
+        amount: totalAmount * 100, // Convert to paise (includes delivery fee)
         currency: "INR",
         receipt: `receipt_order_${Date.now()}`,
       });
-      let newOrder = await Order.create({
+
+      const newOrder = await Order.create({
         user: req.userId,
         address,
         paymentMethod,
@@ -79,26 +92,35 @@ export const placeOrder = async (req, res) => {
       });
 
       return res.status(200).json({
+        success: true,
         razorOrder,
         order_id: newOrder._id,
       });
     }
 
-    let newOrder = await Order.create({
+    // For COD, create order directly
+    const newOrder = await Order.create({
       user: req.userId,
       address,
       paymentMethod,
       totalAmount,
       shopOrders,
+      payment: false, // COD payment pending
     });
 
-    return res.status(200).json(newOrder);
+    return res.status(200).json({
+      success: true,
+      order: newOrder,
+    });
+    
   } catch (error) {
-    console.error("Verify Razorpay Error:", error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Place Order Error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || "Failed to place order" 
+    });
   }
 };
-
 export const verifyPayment = async (req, res) => {
   try {
     const { razorpayPaymentId, orderId } = req.body;
