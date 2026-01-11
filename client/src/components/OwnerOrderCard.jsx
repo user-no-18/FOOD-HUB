@@ -11,7 +11,15 @@ const OwnerOrderCard = ({ data }) => {
   const [showNotFound, setShowNotFound] = useState(false);
   const [availableBoy, setAvailableBoy] = useState([]);
   const [assignedDeliveryBoy, setAssignedDeliveryBoy] = useState(null);
-
+if (!data || !data._id || !data.shopOrder) {
+    console.error("Invalid order data:", data);
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+        <p className="text-red-800 font-semibold">⚠️ Invalid Order Data</p>
+        <p className="text-red-600 text-sm mt-1">Unable to display this order</p>
+      </div>
+    );
+  }
   const formatDate = (dateString) => {
     const options = {
       year: "numeric",
@@ -267,7 +275,7 @@ const OwnerOrderCard = ({ data }) => {
             <div className="flex justify-between items-center pt-3 border-t-2 border-gray-300">
               <p className="text-lg font-bold text-gray-900">Order Total</p>
               <p className="text-2xl font-bold text-[#ff4d2d]">
-                ₹{data.shopOrder.subtotal?.toFixed(2) || "0.00"}
+                ₹{data.totalAmount?.toFixed(2) || data.shopOrder?.subtotal?.toFixed(2) || "0.00"}
               </p>
             </div>
 

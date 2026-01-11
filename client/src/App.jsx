@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import SignIn from "./Pages/SignIn";
 import SignUp from "./Pages/SignUp";
@@ -6,7 +6,7 @@ import ForgotPassword from "./Pages/ForgotPassword";
 import Home from "./Pages/Home";
 import useGetCurrentUser from "./Hooks/UseGetCurrentUser";
 import { useSelector } from "react-redux";
-//Backend url 
+import socket from "./socket"; // Import socket
 export const serverUrl = "http://localhost:5000";
 
 import { useNavigate } from "react-router-dom";
@@ -25,7 +25,7 @@ import useGetMyOrders from "./Hooks/useGetMyOrders";
 import useUpdateLocation from "./Hooks/useUpdateLocation";
 import TrackOrderPage from "./Pages/TrackOrderPage";
 import Shop from "./Pages/Shop";
-import BaseHome from "./Temp/Base";
+
 const App = () => {
   const { userData } = useSelector((state) => state.user);
 
@@ -36,6 +36,28 @@ const App = () => {
   useGetItemByCity();
   useGetMyOrders();
   useUpdateLocation();
+
+  // Socket connection management
+  useEffect(() => {
+    if (userData && userData._id) {
+      // Connect socket when user is authenticated
+      socket.connect();
+      
+      // Send user identity to server
+      socket.emit("identity", { userId: userData._id });
+      
+      console.log("Socket connected for user:", userData._id);
+    } else {
+      // Disconnect socket when user logs out
+      socket.disconnect();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      socket.disconnect();
+    };
+  }, [userData]);
+
   return (
     <Routes>
       <Route
@@ -90,11 +112,6 @@ const App = () => {
         path="/shop-items/:shopId"
         element={userData ? <Shop/> : <Navigate to={"/signin"} />}
       />
-      <Route
-        path="/base"
-        element={<BaseHome />}
-      />
-     
     </Routes>
   );
 };

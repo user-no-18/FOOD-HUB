@@ -12,11 +12,11 @@ let instance = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+
 export const placeOrder = async (req, res) => {
   try {
     const { cartItems, address, paymentMethod, totalAmount } = req.body;
 
-    // Validation
     if (!cartItems || cartItems.length === 0) {
       return res.status(400).json({ success: false, message: "Cart is empty" });
     }
@@ -25,13 +25,6 @@ export const placeOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Address (text, latitude, longitude) is required",
-      });
-    }
-
-    if (!totalAmount || totalAmount <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Total amount is required",
       });
     }
 
@@ -50,8 +43,6 @@ export const placeOrder = async (req, res) => {
         if (!shop) throw new Error(`Shop not found: ${shopId}`);
 
         const items = groupedByShop[shopId];
-        
-        // Calculate subtotal for this shop
         const subtotal = items.reduce(
           (sum, i) => sum + Number(i.price) * Number(i.quantity),
           0
@@ -76,7 +67,7 @@ export const placeOrder = async (req, res) => {
     // For online payment, create Razorpay order
     if (paymentMethod === "online") {
       const razorOrder = await instance.orders.create({
-        amount: totalAmount * 100, // Convert to paise (includes delivery fee)
+        amount: totalAmount * 100,
         currency: "INR",
         receipt: `receipt_order_${Date.now()}`,
       });
@@ -105,19 +96,87 @@ export const placeOrder = async (req, res) => {
       paymentMethod,
       totalAmount,
       shopOrders,
-      payment: false, // COD payment pending
+      payment: false,
+    });
+
+    // Populate ALL necessary fields for socket emission
+    await newOrder.populate("shopOrders.shop", "name");
+    await newOrder.populate("shopOrders.owner", "name email mobile socketId");
+    await newOrder.populate("shopOrders.shopOrderItems.item", "name image price");
+    await newOrder.populate("user", "fullName email mobile");
+
+    // Get Socket.IO instance
+    const io = req.app.get("io");
+
+    // Emit to each shop owner with COMPLETE order data
+    newOrder.shopOrders.forEach((shopOrder) => {
+      const owner = shopOrder.owner;
+      
+      console.log({
+        ownerId: owner._id,
+        socketId: owner.socketId,
+        shopName: shopOrder.shop.name
+      });
+
+      if (owner && owner.socketId) {
+       
+        const orderForOwner = {
+          _id: newOrder._id,
+          user: {
+            _id: newOrder.user._id,
+            fullName: newOrder.user.fullName,
+            email: newOrder.user.email,
+            mobile: newOrder.user.mobile,
+          },
+          address: newOrder.address,
+          paymentMethod: newOrder.paymentMethod,
+          payment: newOrder.payment,
+          totalAmount: newOrder.totalAmount,
+          razorpayOrderId: newOrder.razorpayOrderId || null,
+          razorpayPaymentId: newOrder.razorpayPaymentId || null,
+          createdAt: newOrder.createdAt,
+          shopOrder: {
+            _id: shopOrder._id,
+            shop: {
+              _id: shopOrder.shop._id,
+              name: shopOrder.shop.name,
+            },
+            owner: {
+              _id: owner._id,
+              name: owner.name,
+              email: owner.email,
+              mobile: owner.mobile,
+            },
+            subtotal: shopOrder.subtotal,
+            status: shopOrder.status,
+            shopOrderItems: shopOrder.shopOrderItems.map(item => ({
+              item: item.item,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              image: item.image,
+            })),
+            assignedDeliveryBoy: shopOrder.assignedDeliveryBoy || null,
+          }
+        };
+        
+        io.to(owner.socketId).emit("newOrder", orderForOwner);
+        
+        console.log(" Order notification sent to:", owner.email);
+      } else {
+        console.log(" Owner not connected:", owner.email);
+      }
     });
 
     return res.status(200).json({
       success: true,
       order: newOrder,
     });
-    
   } catch (error) {
     console.error("Place Order Error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || "Failed to place order" 
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to place order",
     });
   }
 };
@@ -125,30 +184,94 @@ export const verifyPayment = async (req, res) => {
   try {
     const { razorpayPaymentId, orderId } = req.body;
     const payment = await instance.payments.fetch(razorpayPaymentId);
+    
     if (!payment || payment.status != "captured") {
       return res
         .status(400)
         .json({ success: false, message: "Payment not successful" });
     }
+    
     const order = await Order.findById(orderId);
     if (!order) {
       return res
         .status(404)
         .json({ success: false, message: "Order not found" });
     }
+    
     order.payment = true;
-    order.razorpayPayment = razorpayPaymentId;
+    order.razorpayPaymentId = razorpayPaymentId;
     await order.save();
 
     await order.populate("shopOrders.shop", "name");
+    await order.populate("shopOrders.owner", "name email mobile socketId");
     await order.populate("shopOrders.shopOrderItems.item", "name image price");
+    await order.populate("user", "fullName email mobile");
 
-    return res.status(200).json(order);
+    const io = req.app.get("io");
+
+    order.shopOrders.forEach((shopOrder) => {
+      const owner = shopOrder.owner;
+      
+      if (owner && owner.socketId) {
+        const orderForOwner = {
+          _id: order._id,
+          user: {
+            _id: order.user._id,
+            fullName: order.user.fullName,
+            email: order.user.email,
+            mobile: order.user.mobile,
+          },
+          address: order.address,
+          paymentMethod: order.paymentMethod,
+          payment: order.payment,
+          totalAmount: order.totalAmount,
+          razorpayOrderId: order.razorpayOrderId || null,
+          razorpayPaymentId: order.razorpayPaymentId || null,
+          createdAt: order.createdAt,
+          shopOrder: {
+            _id: shopOrder._id,
+            shop: {
+              _id: shopOrder.shop._id,
+              name: shopOrder.shop.name,
+            },
+            owner: {
+              _id: owner._id,
+              name: owner.name,
+              email: owner.email,
+              mobile: owner.mobile,
+            },
+            subtotal: shopOrder.subtotal,
+            status: shopOrder.status,
+            shopOrderItems: shopOrder.shopOrderItems.map(item => ({
+              item: item.item,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              image: item.image,
+            })),
+            assignedDeliveryBoy: shopOrder.assignedDeliveryBoy || null,
+          }
+        };
+        
+        io.to(owner.socketId).emit("newOrder", orderForOwner);
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      order: {
+        _id: order._id,
+        paymentMethod: order.paymentMethod,
+        payment: order.payment,
+        totalAmount: order.totalAmount,
+      }
+    });
   } catch (error) {
     console.error("Verify Razorpay Error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 export const getMyoders = async (req, res) => {
   try {

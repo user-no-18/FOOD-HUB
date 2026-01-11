@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { useSelector } from "react-redux";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import socket from "../socket"; // Import socket
 
 // Icons
 import { MdKeyboardBackspace, MdOutlineShoppingBag, MdSearch } from "react-icons/md";
@@ -10,11 +11,69 @@ import { TbReceipt2 } from "react-icons/tb";
 // Components
 import UserOrderCard from "../components/UserOrderCard";
 import OwnerOrdersDemo from "../components/OwnerOrderCard";
+import { setMyOrders } from "../Redux/user.slice";
 
 const MyOrderCard = () => {
   const { userData, myOrders } = useSelector((state) => state.user);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Listen for new orders via Socket.IO
+  useEffect(() => {
+    if (!userData) return;
+
+    const handleNewOrder = (orderData) => {
+      console.log("📦 New order received via socket:", orderData);
+      
+      // Validate the data structure before using
+      if (!orderData || !orderData._id || !orderData.shopOrder) {
+        console.error("❌ Invalid order data received:", orderData);
+        return;
+      }
+      
+      // For owners, check if this order is for their shop
+      if (userData.role === "owner") {
+        console.log("✅ Adding new order to list");
+        
+        // Add the new order to the beginning of the list
+        // Ensure we don't add duplicates
+        const isDuplicate = myOrders.some(order => order._id === orderData._id);
+        
+        if (!isDuplicate) {
+          dispatch(setMyOrders([orderData, ...myOrders]));
+          
+          // Optional: Show browser notification
+          if (Notification.permission === "granted") {
+            new Notification("🔔 New Order!", {
+              body: `Order #${orderData._id.slice(-8)} - ₹${orderData.totalAmount}`,
+              icon: "/vite.svg",
+              tag: orderData._id, // Prevent duplicate notifications
+            });
+          }
+          
+          // Optional: Play sound
+          const audio = new Audio('/notification.mp3'); // Add notification sound to public folder
+          audio.play().catch(err => console.log("Audio play failed:", err));
+        }
+      }
+    };
+
+    // Listen for the newOrder event
+    socket.on("newOrder", handleNewOrder);
+
+    // Request notification permission on mount (for owners)
+    if (userData.role === "owner" && Notification.permission === "default") {
+      Notification.requestPermission().then(permission => {
+        console.log("Notification permission:", permission);
+      });
+    }
+
+    // Cleanup listener on unmount
+    return () => {
+      socket.off("newOrder", handleNewOrder);
+    };
+  }, [userData, myOrders, dispatch]);
 
   // Animation Variants
   const containerVariants = {
@@ -38,11 +97,10 @@ const MyOrderCard = () => {
 
   return (
     <div className="w-full min-h-screen bg-slate-50 font-sans text-slate-900">
-   
+      {/* Header */}
       <div className="sticky top-0 z-30 w-full bg-white/70 backdrop-blur-lg border-b border-slate-200 transition-all">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-
             {/* Left: Back + Title */}
             <div className="flex items-center gap-4">
               <button
@@ -118,7 +176,6 @@ const MyOrderCard = () => {
             </AnimatePresence>
           </motion.div>
         ) : (
-        
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -134,16 +191,16 @@ const MyOrderCard = () => {
             </h3>
 
             <p className="text-slate-500 text-center max-w-sm text-sm leading-relaxed mb-8">
-              You haven’t placed any orders yet.  
+              You haven't received any orders yet.  
               <br />
-              Discover great food and place your first order.
+              New orders will appear here in real-time.
             </p>
 
             <button
               onClick={() => navigate("/")}
               className="px-6 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
             >
-              Start Ordering
+              Go to Dashboard
             </button>
           </motion.div>
         )}

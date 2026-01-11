@@ -47,7 +47,7 @@ const OwnerDashboard = () => {
         </div>
 
         {/* Shop Content */}
-        <div className="p-6 flex-1 flex flex-col justify-between">
+        <div className="p-6  flex-1 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start mb-2">
               <div>
@@ -69,7 +69,7 @@ const OwnerDashboard = () => {
             </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-4 pt-6 border-t border-gray-100 text-xs text-gray-400">
+          <div className="lg:mt-6 sm:mt-64 flex flex-wrap gap-4 pt-6 border-t border-gray-100 text-xs text-gray-400 ">
             <div className="flex items-center gap-1">
               <FaCalendarAlt /> Created: {new Date(shopData.createdAt).toLocaleDateString()}
             </div>
