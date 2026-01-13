@@ -13,6 +13,7 @@ let instance = new Razorpay({
 });
 
 
+
 export const placeOrder = async (req, res) => {
   try {
     const { cartItems, address, paymentMethod, totalAmount } = req.body;
@@ -102,7 +103,10 @@ export const placeOrder = async (req, res) => {
     // Populate ALL necessary fields for socket emission
     await newOrder.populate("shopOrders.shop", "name");
     await newOrder.populate("shopOrders.owner", "name email mobile socketId");
-    await newOrder.populate("shopOrders.shopOrderItems.item", "name image price");
+    await newOrder.populate(
+      "shopOrders.shopOrderItems.item",
+      "name image price"
+    );
     await newOrder.populate("user", "fullName email mobile");
 
     // Get Socket.IO instance
@@ -111,15 +115,14 @@ export const placeOrder = async (req, res) => {
     // Emit to each shop owner with COMPLETE order data
     newOrder.shopOrders.forEach((shopOrder) => {
       const owner = shopOrder.owner;
-      
+
       console.log({
         ownerId: owner._id,
         socketId: owner.socketId,
-        shopName: shopOrder.shop.name
+        shopName: shopOrder.shop.name,
       });
 
       if (owner && owner.socketId) {
-       
         const orderForOwner = {
           _id: newOrder._id,
           user: {
@@ -149,7 +152,7 @@ export const placeOrder = async (req, res) => {
             },
             subtotal: shopOrder.subtotal,
             status: shopOrder.status,
-            shopOrderItems: shopOrder.shopOrderItems.map(item => ({
+            shopOrderItems: shopOrder.shopOrderItems.map((item) => ({
               item: item.item,
               name: item.name,
               price: item.price,
@@ -157,11 +160,11 @@ export const placeOrder = async (req, res) => {
               image: item.image,
             })),
             assignedDeliveryBoy: shopOrder.assignedDeliveryBoy || null,
-          }
+          },
         };
-        
+
         io.to(owner.socketId).emit("newOrder", orderForOwner);
-        
+
         console.log(" Order notification sent to:", owner.email);
       } else {
         console.log(" Owner not connected:", owner.email);
@@ -184,20 +187,20 @@ export const verifyPayment = async (req, res) => {
   try {
     const { razorpayPaymentId, orderId } = req.body;
     const payment = await instance.payments.fetch(razorpayPaymentId);
-    
+
     if (!payment || payment.status != "captured") {
       return res
         .status(400)
         .json({ success: false, message: "Payment not successful" });
     }
-    
+
     const order = await Order.findById(orderId);
     if (!order) {
       return res
         .status(404)
         .json({ success: false, message: "Order not found" });
     }
-    
+
     order.payment = true;
     order.razorpayPaymentId = razorpayPaymentId;
     await order.save();
@@ -211,7 +214,7 @@ export const verifyPayment = async (req, res) => {
 
     order.shopOrders.forEach((shopOrder) => {
       const owner = shopOrder.owner;
-      
+
       if (owner && owner.socketId) {
         const orderForOwner = {
           _id: order._id,
@@ -242,7 +245,7 @@ export const verifyPayment = async (req, res) => {
             },
             subtotal: shopOrder.subtotal,
             status: shopOrder.status,
-            shopOrderItems: shopOrder.shopOrderItems.map(item => ({
+            shopOrderItems: shopOrder.shopOrderItems.map((item) => ({
               item: item.item,
               name: item.name,
               price: item.price,
@@ -250,9 +253,9 @@ export const verifyPayment = async (req, res) => {
               image: item.image,
             })),
             assignedDeliveryBoy: shopOrder.assignedDeliveryBoy || null,
-          }
+          },
         };
-        
+
         io.to(owner.socketId).emit("newOrder", orderForOwner);
       }
     });
@@ -264,14 +267,13 @@ export const verifyPayment = async (req, res) => {
         paymentMethod: order.paymentMethod,
         payment: order.payment,
         totalAmount: order.totalAmount,
-      }
+      },
     });
   } catch (error) {
     console.error("Verify Razorpay Error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 export const getMyoders = async (req, res) => {
   try {
@@ -350,7 +352,7 @@ export const updateOrderStatus = async (req, res) => {
     order.markModified("shopOrders");
 
     let deliveryboyPayload = [];
-    //if status is out-for-delivery then assign delivery boy
+
     if (status === "out-for-delivery") {
       const { longitude, latitude } = order.address;
 
@@ -366,7 +368,7 @@ export const updateOrderStatus = async (req, res) => {
           },
         },
       });
-      //if no delivery boy found within range then return message
+
       if (nearbyDeliveryBoy.length === 0) {
         await order.save();
         return res.status(200).json({
@@ -410,8 +412,8 @@ export const updateOrderStatus = async (req, res) => {
       if (!shopOrder.assignment) {
         const deliveryAssignment = await DeliveryAssignment.create({
           order: order._id,
-          shop: shopOrder.shop,
-          shopOrderId: shopOrder._id,
+          shop: shopId,
+          shopOrderId: shopId,
           broadcastedTo: candidates,
           status: "broadcasted",
         });
@@ -434,10 +436,23 @@ export const updateOrderStatus = async (req, res) => {
       "shopOrders.assignedDeliveryBoy",
       "fullName mobile email"
     );
+    await order.populate("user", "fullName email mobile socketId");
 
     const updatedShopOrder = order.shopOrders.find(
       (so) => so.shop._id.toString() === shopId.toString()
     );
+
+    const io = req.app.get("io");
+    const user = order.user;
+
+    if (user && user.socketId) {
+      io.to(user.socketId).emit("update-order", {
+        orderId: order._id,
+        shopId: shopId,
+        status: status,
+        timestamp: new Date(),
+      });
+    }
 
     return res.status(200).json({
       success: true,

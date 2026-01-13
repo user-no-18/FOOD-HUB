@@ -14,7 +14,6 @@ const userSlice = createSlice({
     totalAmount: 0,
     myOrders: [],
     searchItems: [],
-    socket: null,
   },
   reducers: {
     setUserData: (state, action) => {
@@ -35,7 +34,6 @@ const userSlice = createSlice({
     setItemsInMyCity: (state, action) => {
       state.itemsInMyCity = action.payload;
     },
-
     triggerItemsRefresh: (state) => {
       state.refreshCounter += 1;
     },
@@ -70,6 +68,43 @@ const userSlice = createSlice({
     setMyOrders: (state, action) => {
       state.myOrders = action.payload;
     },
+    updateOrderStatus: (state, action) => {
+      const { orderId, shopId, status, shopOrder } = action.payload;
+      
+      const orderIndex = state.myOrders.findIndex(
+        (order) => order._id === orderId
+      );
+      
+      if (orderIndex !== -1) {
+        const order = state.myOrders[orderIndex];
+        
+        if (order.shopOrders) {
+          const shopOrderIndex = order.shopOrders.findIndex(
+            (so) => so.shop._id === shopId || so.shop.toString() === shopId
+          );
+          
+          if (shopOrderIndex !== -1) {
+            order.shopOrders[shopOrderIndex].status = status;
+            if (shopOrder) {
+              order.shopOrders[shopOrderIndex] = {
+                ...order.shopOrders[shopOrderIndex],
+                ...shopOrder,
+              };
+            }
+          }
+        } else if (order.shopOrder && (order.shopOrder.shop._id === shopId || order.shopOrder.shop.toString() === shopId)) {
+          order.shopOrder.status = status;
+          if (shopOrder) {
+            order.shopOrder = {
+              ...order.shopOrder,
+              ...shopOrder,
+            };
+          }
+        }
+        
+        state.myOrders[orderIndex] = { ...order };
+      }
+    },
     clearCart: (state) => {
       state.cartItems = [];
       state.totalAmount = 0;
@@ -77,11 +112,9 @@ const userSlice = createSlice({
     setSearchItems: (state, action) => {
       state.searchItems = action.payload;
     },
-    setSocket: (state, action) => {
-      state.socket = action.payload;
-    },
   },
 });
+
 export const {
   setUserData,
   setCity,
@@ -94,7 +127,9 @@ export const {
   updateCartItemQuantity,
   deleteFromCartItems,
   setMyOrders,
+  updateOrderStatus,
   clearCart,
-  setSearchItems,setSocket
+  setSearchItems,
 } = userSlice.actions;
+
 export default userSlice.reducer;

@@ -24,17 +24,17 @@ const MyOrderCard = () => {
     if (!userData) return;
 
     const handleNewOrder = (orderData) => {
-      console.log("📦 New order received via socket:", orderData);
+      console.log("New order received via socket:", orderData);
       
       // Validate the data structure before using
       if (!orderData || !orderData._id || !orderData.shopOrder) {
-        console.error("❌ Invalid order data received:", orderData);
+        console.error("invalid order data received:", orderData);
         return;
       }
       
       // For owners, check if this order is for their shop
       if (userData.role === "owner") {
-        console.log("✅ Adding new order to list");
+        console.log(" Adding new order to list");
         
         // Add the new order to the beginning of the list
         // Ensure we don't add duplicates
@@ -45,7 +45,7 @@ const MyOrderCard = () => {
           
           // Optional: Show browser notification
           if (Notification.permission === "granted") {
-            new Notification("🔔 New Order!", {
+            new Notification(" New Order!", {
               body: `Order #${orderData._id.slice(-8)} - ₹${orderData.totalAmount}`,
               icon: "/vite.svg",
               tag: orderData._id, // Prevent duplicate notifications

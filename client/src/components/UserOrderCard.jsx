@@ -1,10 +1,40 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { FaStore, FaPhoneAlt } from "react-icons/fa";
 import { MdDeliveryDining, MdPayment, MdLocationOn } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import socket from "../socket";
+import { updateOrderStatus } from "../Redux/user.slice";
 
 const UserOrderCard = ({ data }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const handleOrderUpdate = (updateData) => {
+      if (updateData.orderId === data._id) {
+        dispatch(updateOrderStatus({
+          orderId: updateData.orderId,
+          shopId: updateData.shopId,
+          status: updateData.status,
+          shopOrder: updateData.shopOrder,
+        }));
+
+        if (Notification.permission === "granted") {
+          new Notification("Order Status Updated", {
+            body: `Your order is now ${updateData.status}`,
+            icon: "/vite.svg",
+          });
+        }
+      }
+    };
+
+    socket.on("update-order", handleOrderUpdate);
+
+    return () => {
+      socket.off("update-order", handleOrderUpdate);
+    };
+  }, [data._id, dispatch]);
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "long", day: "numeric" };
@@ -29,7 +59,6 @@ const UserOrderCard = ({ data }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-4 hover:shadow-lg transition-shadow duration-300">
-      {/* Header Section */}
       <div className="bg-gradient-to-r from-[#ff4d2d] to-[#ff6b4d] px-6 py-4 text-white">
         <div className="flex justify-between items-start">
           <div>
@@ -56,11 +85,9 @@ const UserOrderCard = ({ data }) => {
         </div>
       </div>
 
-      {/* Shop Orders Section */}
       <div className="p-6 space-y-4">
         {data.shopOrders?.map((shopOrder, shopIndex) => (
           <div key={shopIndex} className="space-y-3">
-           
             <div className="flex items-center justify-between pb-3 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <FaStore className="text-[#ff4d2d] text-lg" />
@@ -79,7 +106,6 @@ const UserOrderCard = ({ data }) => {
               )}
             </div>
 
-            {/* Items List */}
             <div className="space-y-2">
               {shopOrder.shopOrderItems?.map((item, itemIndex) => (
                 <div
@@ -113,7 +139,6 @@ const UserOrderCard = ({ data }) => {
               ))}
             </div>
 
-            {/* Shop Subtotal */}
             <div className="flex justify-end pt-2">
               <div className="text-right">
                 <p className="text-sm text-gray-600">Shop Subtotal</p>
@@ -123,7 +148,6 @@ const UserOrderCard = ({ data }) => {
           </div>
         ))}
 
-        {/* Delivery Address */}
         <div className="pt-4 border-t border-gray-200">
           <p className="text-sm font-semibold text-gray-700 mb-2">Delivery Address</p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -131,7 +155,6 @@ const UserOrderCard = ({ data }) => {
           </div>
         </div>
 
-       
         <div className="pt-4 border-t-2 border-gray-300">
           <div className="flex justify-between items-center">
             <p className="text-lg font-bold text-gray-900">Total Amount</p>
@@ -141,7 +164,6 @@ const UserOrderCard = ({ data }) => {
           </div>
         </div>
 
-        
         <div className="pt-4">
           {data.shopOrders?.[0]?.status === "delivered" ? (
             <div className="bg-green-50 border border-green-300 rounded-lg p-4 text-center">
@@ -167,4 +189,5 @@ const UserOrderCard = ({ data }) => {
     </div>
   );
 };
+
 export default UserOrderCard;
