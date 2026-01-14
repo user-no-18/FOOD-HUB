@@ -324,7 +324,7 @@ export const getMyoders = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-//this controller is used for updating order status by shop owner and assigning delivery boy
+
 export const updateOrderStatus = async (req, res) => {
   try {
     const { orderId, shopId } = req.params;
@@ -352,7 +352,7 @@ export const updateOrderStatus = async (req, res) => {
     order.markModified("shopOrders");
 
     let deliveryboyPayload = [];
-
+    
     if (status === "out-for-delivery") {
       const { longitude, latitude } = order.address;
 
@@ -368,13 +368,12 @@ export const updateOrderStatus = async (req, res) => {
           },
         },
       });
-
+      
       if (nearbyDeliveryBoy.length === 0) {
         await order.save();
         return res.status(200).json({
           success: true,
-          message:
-            "Status updated successfully, but no delivery boys found in 5km radius",
+          message: "Status updated successfully, but no delivery boys found in 5km radius",
           shopOrder: shopOrder,
           assignedDeliveryBoy: null,
           availableBoys: [],
@@ -400,8 +399,7 @@ export const updateOrderStatus = async (req, res) => {
         await order.save();
         return res.status(200).json({
           success: true,
-          message:
-            "Status updated successfully, but all delivery boys are busy",
+          message: "Status updated successfully, but all delivery boys are busy",
           shopOrder: shopOrder,
           assignedDeliveryBoy: null,
           availableBoys: [],
@@ -413,12 +411,35 @@ export const updateOrderStatus = async (req, res) => {
         const deliveryAssignment = await DeliveryAssignment.create({
           order: order._id,
           shop: shopId,
-          shopOrderId: shopId,
           broadcastedTo: candidates,
           status: "broadcasted",
         });
 
         shopOrder.assignment = deliveryAssignment._id;
+
+        await order.populate("shopOrders.shop", "name");
+
+        const io = req.app.get("io");
+        if (io) {
+          availableBoys.forEach((boy) => {
+            const boySocketId = boy.socketId;
+            if (boySocketId) {
+              const assignmentData = {
+                id: deliveryAssignment._id,
+                orderId: order._id,
+                shopId: shopOrder.shop._id,
+                shopName: shopOrder.shop.name,
+                orderAddress: order.address,
+                items: shopOrder.shopOrderItems || [],
+                subtotal: shopOrder.subtotal || 0,
+                totalAmount: order.totalAmount,
+                createdAt: deliveryAssignment.createdAt,
+              };
+
+              io.to(boySocketId).emit("new-assignment", assignmentData);
+            }
+          });
+        }
       }
 
       deliveryboyPayload = availableBoys.map((b) => ({
@@ -432,10 +453,7 @@ export const updateOrderStatus = async (req, res) => {
 
     await order.save();
     await order.populate("shopOrders.shop", "name");
-    await order.populate(
-      "shopOrders.assignedDeliveryBoy",
-      "fullName mobile email"
-    );
+    await order.populate("shopOrders.assignedDeliveryBoy", "fullName mobile email");
     await order.populate("user", "fullName email mobile socketId");
 
     const updatedShopOrder = order.shopOrders.find(
@@ -450,7 +468,6 @@ export const updateOrderStatus = async (req, res) => {
         orderId: order._id,
         shopId: shopId,
         status: status,
-        timestamp: new Date(),
       });
     }
 
@@ -466,32 +483,38 @@ export const updateOrderStatus = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-// This controller is used for fetching deliveryboy orders assigned to him with status broadcasted
+
 export const getdeliveryBoyAssignmemts = async (req, res) => {
   try {
     const deliveryBoyId = req.userId;
+    
     const assignments = await DeliveryAssignment.find({
       broadcastedTo: deliveryBoyId,
       status: "broadcasted",
-    }).populate("order shop");
+    })
+      .populate("order")
+      .populate("shop");
 
-    const formated = assignments.map((a) => ({
-      id: a._id,
-      orderId: a.order._id,
-      shopId: a.shop._id,
-      shopName: a.shop.name,
-      orderAddress: a.order.address,
-      items:
-        a.order.shopOrders.find(
+    const formated = assignments
+      .filter(a => a.order && a.shop)
+      .map((a) => {
+        const shopOrder = a.order.shopOrders.find(
           (so) => so.shop.toString() === a.shop._id.toString()
-        ).shopOrderItems || [],
-      subtotal:
-        a.order.shopOrders.find(
-          (so) => so.shop.toString() === a.shop._id.toString()
-        ).subtotal || 0,
-      totalAmount: a.order.totalAmount,
-      createdAt: a.createdAt,
-    }));
+        );
+
+        return {
+          id: a._id,
+          orderId: a.order._id,
+          shopId: a.shop._id,
+          shopName: a.shop.name,
+          orderAddress: a.order.address,
+          items: shopOrder?.shopOrderItems || [],
+          subtotal: shopOrder?.subtotal || 0,
+          totalAmount: a.order.totalAmount,
+          createdAt: a.createdAt,
+        };
+      });
+
     return res.status(200).json({ success: true, assignments: formated });
   } catch (error) {
     console.error("Error fetching delivery boy assignments:", error);
@@ -499,31 +522,38 @@ export const getdeliveryBoyAssignmemts = async (req, res) => {
   }
 };
 // Accept an order assignment
+// server/controllers/orderController.js - Fixed acceptOrder
+
 export const acceptOrder = async (req, res) => {
   try {
     const { assignmentId } = req.params;
     const assignment = await DeliveryAssignment.findById(assignmentId);
+    
     if (!assignment) {
       return res
         .status(404)
         .json({ success: false, message: "Assignment not found" });
     }
+    
     if (assignment.status !== "broadcasted") {
       return res.status(400).json({
         success: false,
         message: "Assignment is not available for acceptance",
       });
     }
+    
     const alreadyAssigned = await DeliveryAssignment.findOne({
       assignedTo: req.userId,
-      status: { $in: ["broadcasted", "completed"] },
+      status: "assigned",
     });
+    
     if (alreadyAssigned) {
       return res.status(400).json({
         success: false,
         message: "You already have an active assignment",
       });
     }
+    
     assignment.assignedTo = req.userId;
     assignment.status = "assigned";
     assignment.acceptedAt = new Date();
@@ -535,16 +565,26 @@ export const acceptOrder = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Order not found" });
     }
+    
     const shopOrder = order.shopOrders.find(
-      (so) => so._id.toString() === assignment.shopOrderId.toString()
+      (so) => so.shop.toString() === assignment.shop.toString()
     );
+    
+    if (!shopOrder) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Shop order not found" });
+    }
+    
     shopOrder.assignedDeliveryBoy = req.userId;
     order.markModified("shopOrders");
     await order.save();
+    
     await order.populate(
       "shopOrders.assignedDeliveryBoy",
       "fullName mobile email"
     );
+    
     return res
       .status(200)
       .json({ success: true, message: "Order accepted successfully" });
@@ -553,7 +593,6 @@ export const acceptOrder = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-
 // Get current order assigned to delivery
 
 export const getCurrentOrder = async (req, res) => {

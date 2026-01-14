@@ -4,14 +4,16 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 import { serverUrl } from "../App";
 import DeliveryBoyTracking from "./DeliveryBoyTracking";
+import socket from "../socket";
 
 const DeliveryBoyDashboard = () => {
   const { userData, city } = useSelector((state) => state.user);
   const [assignments, setAssignments] = useState([]);
-  const [currentOrder, setCurrentOrder] = useState();
+  const [currentOrder, setCurrentOrder] = useState(null);
   const [showOtp, setShowOtp] = useState(false);
-  const [otp, setOtp] = useState(""); 
-  
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(true);
+
   const getAssignments = async () => {
     try {
       const res = await axios.get(`${serverUrl}/api/order/get-assignments`, {
@@ -26,13 +28,22 @@ const DeliveryBoyDashboard = () => {
 
   const getCurrentOrder = async () => {
     try {
+      setLoading(true);
       const res = await axios.get(`${serverUrl}/api/order/get-current-order`, {
         withCredentials: true,
       });
       console.log("Current Order:", res.data);
-      setCurrentOrder(res.data);
+      
+      if (res.data.success) {
+        setCurrentOrder(res.data);
+      } else {
+        setCurrentOrder(null);
+      }
     } catch (error) {
       console.error("Error fetching current order:", error);
+      setCurrentOrder(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -40,68 +51,106 @@ const DeliveryBoyDashboard = () => {
     try {
       const res = await axios.post(
         `${serverUrl}/api/order/accept-order/${assignmentId}`,
-        {
-          withCredentials: true,
-        }
+        {},
+        { withCredentials: true }
       );
       await getCurrentOrder();
+      await getAssignments();
       console.log("Accept Order Response:", res.data);
     } catch (error) {
       console.error("Error accepting order:", error);
+      alert(error.response?.data?.message || "Failed to accept order");
     }
   };
-  
+
   const sendOtp = async () => {
     try {
       const res = await axios.post(
         `${serverUrl}/api/order/send-otp/`,
         { shopOrderId: currentOrder.shopOrder._id },
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
       setShowOtp(true);
       setOtp("");
-      console.log("Accept Order Response:", res.data);
+      console.log("OTP sent:", res.data);
     } catch (error) {
-      console.error("Error accepting order:", error);
+      console.error("Error sending OTP:", error);
     }
   };
-  
+
   const verifyOtp = async () => {
     try {
       const res = await axios.post(
         `${serverUrl}/api/order/verify-otp/`,
         {
-          shopOrderId: currentOrder?.shopOrder?._id, 
+          shopOrderId: currentOrder?.shopOrder?._id,
           otp,
         },
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
-      
+
       setShowOtp(false);
       setOtp("");
-      await getCurrentOrder(); 
+      await getCurrentOrder();
       console.log("Verify OTP Response:", res.data);
     } catch (error) {
       console.error("Error verifying OTP:", error);
+      alert("Invalid OTP or verification failed");
     }
   };
 
   useEffect(() => {
-    getAssignments();
-    getCurrentOrder();
+    if (userData) {
+      getAssignments();
+      getCurrentOrder();
+    }
   }, [userData]);
+
+  useEffect(() => {
+    if (!userData || userData.role !== "deliveryBoy") return;
+
+    const handleNewAssignment = (assignmentData) => {
+      console.log("New assignment received:", assignmentData);
+      
+      if (!assignmentData || !assignmentData.id) {
+        console.error("Invalid assignment data");
+        return;
+      }
+
+      const isDuplicate = assignments.some(a => a.id === assignmentData.id);
+      
+      if (!isDuplicate) {
+        setAssignments(prev => [assignmentData, ...prev]);
+      }
+
+      if (Notification.permission === "granted") {
+        new Notification("🚴 New Delivery Assignment!", {
+          body: `${assignmentData.shopName} - ₹${assignmentData.subtotal}`,
+          icon: "/vite.svg",
+          tag: assignmentData.id,
+        });
+      }
+
+      const audio = new Audio('/notification.mp3');
+      audio.play().catch(err => console.log("Audio play failed:", err));
+    };
+
+    socket.on("new-assignment", handleNewAssignment);
+
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    return () => {
+      socket.off("new-assignment", handleNewAssignment);
+    };
+  }, [userData, assignments]);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <CommonNav />
 
-     
       <div className="pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -123,17 +172,26 @@ const DeliveryBoyDashboard = () => {
               </p>
             </div>
 
-           
             <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-full w-fit">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-sm font-medium text-green-700">Active</span>
             </div>
           </div>
         </div>
-        {!currentOrder && (
+
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+          </div>
+        ) : !currentOrder ? (
           <div className="mb-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               Available Orders
+              {assignments.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  ({assignments.length} available)
+                </span>
+              )}
             </h2>
 
             {assignments.length > 0 ? (
@@ -141,7 +199,7 @@ const DeliveryBoyDashboard = () => {
                 {assignments.map((assignment) => (
                   <div
                     key={assignment.id}
-                    className="bg-white border-2 border-gray-300 rounded-lg p-4 sm:p-5"
+                    className="bg-white border-2 border-gray-300 rounded-lg p-4 sm:p-5 hover:border-orange-400 transition-colors"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                       <div className="flex-1">
@@ -153,14 +211,13 @@ const DeliveryBoyDashboard = () => {
                           {assignment.orderAddress.text}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {assignment.items.length} items | ₹
-                          {assignment.subtotal}
+                          {assignment.items.length} items | ₹{assignment.subtotal}
                         </p>
                       </div>
 
                       <button
                         onClick={() => acceptOrder(assignment.id)}
-                        className="bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-2 md:mt-4 rounded-md text-sm transition-colors duration-200 self-start sm:self-auto whitespace-nowrap"
+                        className="bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-2 rounded-md text-sm transition-colors duration-200 self-start sm:self-auto whitespace-nowrap"
                       >
                         Accept
                       </button>
@@ -170,35 +227,41 @@ const DeliveryBoyDashboard = () => {
               </div>
             ) : (
               <div className="bg-white border-2 border-gray-200 rounded-lg p-8 text-center">
-                <p className="text-gray-500 text-base">
+                <div className="text-6xl mb-4">📭</div>
+                <p className="text-gray-500 text-base font-medium">
                   No assignments available at the moment.
+                </p>
+                <p className="text-gray-400 text-sm mt-2">
+                  You'll be notified when new orders are available
                 </p>
               </div>
             )}
           </div>
-        )}
-        {currentOrder && (
-          <div className="bg-white rounded-2xl p-5 shadow-md w-[90%] border border-orange-100">
+        ) : (
+          <div className="bg-white rounded-2xl p-5 shadow-md border border-orange-100">
             <h2 className="text-lg font-bold mb-3">Current Order</h2>
 
             <div className="border rounded-lg p-4 mb-3">
               <p className="font-semibold text-sm">
-                Shop ID : {currentOrder?.shopOrder?.shop}
+                Shop ID: {currentOrder?.shopOrder?.shop || "N/A"}
               </p>
               <p className="text-sm text-gray-500">
-                {currentOrder.deliveryAddress.text}
+                {currentOrder?.deliveryAddress?.text || "Address not available"}
               </p>
               <p className="text-xs text-gray-400">
-                {currentOrder.shopOrder.shopOrderItems.length} items |{" "}
-                {currentOrder.shopOrder.subtotal}
+                {currentOrder?.shopOrder?.shopOrderItems?.length || 0} items | ₹
+                {currentOrder?.shopOrder?.subtotal || 0}
               </p>
             </div>
-            <DeliveryBoyTracking data={currentOrder} />
+
+            {currentOrder?.deliveryAddress && currentOrder?.deliveryBoyLocation && (
+              <DeliveryBoyTracking data={currentOrder} />
+            )}
+
             {!showOtp ? (
               <button
                 onClick={sendOtp}
-                className="mt-4 w-full bg-green-500 text-white font-semibold py-2 px-4 rounded-xl shadow 
-    hover:bg-green-600 active:scale-95 transition-all duration-200"
+                className="mt-4 w-full bg-green-500 text-white font-semibold py-2 px-4 rounded-xl shadow hover:bg-green-600 active:scale-95 transition-all duration-200"
               >
                 Mark As Delivered
               </button>
@@ -207,7 +270,7 @@ const DeliveryBoyDashboard = () => {
                 <p className="text-sm font-semibold m-2">
                   Enter OTP sent to
                   <span className="text-xl font-bold text-rose-500 m-2">
-                    {currentOrder.user.fullName}
+                    {currentOrder?.user?.fullName || "Customer"}
                   </span>
                 </p>
                 <input
@@ -215,17 +278,25 @@ const DeliveryBoyDashboard = () => {
                   onChange={(e) => setOtp(e.target.value)}
                   type="text"
                   placeholder="Enter OTP"
-                  maxLength={4} 
+                  maxLength={4}
                   className="w-full border border-gray-300 rounded-lg p-2 mb-3"
                 />
                 <div className="flex gap-4">
                   <button
                     onClick={verifyOtp}
-                    disabled={otp.length !== 4} 
-                    className="flex-1 bg-green-500 text-white font-semibold py-2 px-4 rounded-xl shadow
-        hover:bg-green-600 active:scale-95 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    disabled={otp.length !== 4}
+                    className="flex-1 bg-green-500 text-white font-semibold py-2 px-4 rounded-xl shadow hover:bg-green-600 active:scale-95 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
                     Submit OTP
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowOtp(false);
+                      setOtp("");
+                    }}
+                    className="flex-1 bg-gray-500 text-white font-semibold py-2 px-4 rounded-xl shadow hover:bg-gray-600 active:scale-95 transition-all duration-200"
+                  >
+                    Cancel
                   </button>
                 </div>
               </div>
