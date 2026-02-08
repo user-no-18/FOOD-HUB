@@ -40,15 +40,12 @@ const App = () => {
   // Socket connection management
   useEffect(() => {
     if (userData && userData._id) {
-      // Connect socket when user is authenticated
       socket.connect();
-      
-      // Send user identity to server
+
       socket.emit("identity", { userId: userData._id });
-      
+
       console.log("Socket connected for user:", userData._id);
     } else {
-      // Disconnect socket when user logs out
       socket.disconnect();
     }
 
@@ -106,11 +103,11 @@ const App = () => {
       />
       <Route
         path="/track-order/:orderId"
-        element={userData ? <TrackOrderPage/> : <Navigate to={"/signin"} />}
+        element={userData ? <TrackOrderPage /> : <Navigate to={"/signin"} />}
       />
       <Route
         path="/shop-items/:shopId"
-        element={userData ? <Shop/> : <Navigate to={"/signin"} />}
+        element={userData ? <Shop /> : <Navigate to={"/signin"} />}
       />
     </Routes>
   );

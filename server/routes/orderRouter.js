@@ -14,6 +14,6 @@ orderRouter.get('/get-current-order', isAuth, getCurrentOrder);
 orderRouter.post('/send-otp', isAuth, sendDeliveryOtp);
 orderRouter.post('/verify-otp', isAuth, verifyDeliveryOtp);
 orderRouter.patch('/update-status/:orderId/:shopId', isAuth, updateOrderStatus);
-orderRouter.get('/accept-order/:assignmentId', isAuth, acceptOrder);
+orderRouter.post('/accept-order/:assignmentId', isAuth, acceptOrder);
 orderRouter.get('/get-order-by-id/:orderId', isAuth, getOrderbyID);
 export default orderRouter

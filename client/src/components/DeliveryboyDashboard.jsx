@@ -33,7 +33,7 @@ const DeliveryBoyDashboard = () => {
         withCredentials: true,
       });
       console.log("Current Order:", res.data);
-      
+
       if (res.data.success) {
         setCurrentOrder(res.data);
       } else {
@@ -52,7 +52,7 @@ const DeliveryBoyDashboard = () => {
       const res = await axios.post(
         `${serverUrl}/api/order/accept-order/${assignmentId}`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
       await getCurrentOrder();
       await getAssignments();
@@ -62,40 +62,67 @@ const DeliveryBoyDashboard = () => {
       alert(error.response?.data?.message || "Failed to accept order");
     }
   };
-
   const sendOtp = async () => {
     try {
-      const res = await axios.post(
-        `${serverUrl}/api/order/send-otp/`,
-        { shopOrderId: currentOrder.shopOrder._id },
-        { withCredentials: true }
+      console.log("📧 Sending OTP...");
+      console.log("Order ID:", currentOrder.orderId);
+      console.log(
+        "Shop ID:",
+        currentOrder.shopOrder?.shop,
       );
+
+      const res = await axios.post(
+        `${serverUrl}/api/order/send-otp`,
+        {
+          orderId: currentOrder.orderId,
+          shopId:currentOrder.shopOrder?.shop,
+        },
+        { withCredentials: true },
+      );
+
+      console.log("OTP sent:", res.data);
       setShowOtp(true);
       setOtp("");
-      console.log("OTP sent:", res.data);
+      alert("OTP sent to customer!");
     } catch (error) {
       console.error("Error sending OTP:", error);
+      console.error("Error response:", error.response?.data);
+      alert(error.response?.data?.message || "Failed to send OTP");
     }
   };
 
   const verifyOtp = async () => {
     try {
+      console.log("🔐 Verifying OTP...");
+      console.log("Order ID:", currentOrder.orderId);
+      console.log(
+        "Shop ID:",
+        currentOrder.shopOrder?.shop?._id || currentOrder.shopOrder?.shop,
+      );
+      console.log("OTP:", otp);
+
       const res = await axios.post(
-        `${serverUrl}/api/order/verify-otp/`,
+        `${serverUrl}/api/order/verify-otp`,
         {
-          shopOrderId: currentOrder?.shopOrder?._id,
+          orderId: currentOrder.orderId,
+          shopId:
+            currentOrder.shopOrder?.shop?._id || currentOrder.shopOrder?.shop,
           otp,
         },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
+      console.log("✅ OTP verified:", res.data);
       setShowOtp(false);
       setOtp("");
       await getCurrentOrder();
-      console.log("Verify OTP Response:", res.data);
+      alert("Order delivered successfully! 🎉");
     } catch (error) {
-      console.error("Error verifying OTP:", error);
-      alert("Invalid OTP or verification failed");
+      console.error("❌ Error verifying OTP:", error);
+      console.error("Error response:", error.response?.data);
+      alert(
+        error.response?.data?.message || "Invalid OTP or verification failed",
+      );
     }
   };
 
@@ -111,16 +138,16 @@ const DeliveryBoyDashboard = () => {
 
     const handleNewAssignment = (assignmentData) => {
       console.log("New assignment received:", assignmentData);
-      
+
       if (!assignmentData || !assignmentData.id) {
         console.error("Invalid assignment data");
         return;
       }
 
-      const isDuplicate = assignments.some(a => a.id === assignmentData.id);
-      
+      const isDuplicate = assignments.some((a) => a.id === assignmentData.id);
+
       if (!isDuplicate) {
-        setAssignments(prev => [assignmentData, ...prev]);
+        setAssignments((prev) => [assignmentData, ...prev]);
       }
 
       if (Notification.permission === "granted") {
@@ -131,8 +158,8 @@ const DeliveryBoyDashboard = () => {
         });
       }
 
-      const audio = new Audio('/notification.mp3');
-      audio.play().catch(err => console.log("Audio play failed:", err));
+      const audio = new Audio("/notification.mp3");
+      audio.play().catch((err) => console.log("Audio play failed:", err));
     };
 
     socket.on("new-assignment", handleNewAssignment);
@@ -211,7 +238,8 @@ const DeliveryBoyDashboard = () => {
                           {assignment.orderAddress.text}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {assignment.items.length} items | ₹{assignment.subtotal}
+                          {assignment.items.length} items | ₹
+                          {assignment.subtotal}
                         </p>
                       </div>
 
@@ -254,9 +282,10 @@ const DeliveryBoyDashboard = () => {
               </p>
             </div>
 
-            {currentOrder?.deliveryAddress && currentOrder?.deliveryBoyLocation && (
-              <DeliveryBoyTracking data={currentOrder} />
-            )}
+            {currentOrder?.deliveryAddress &&
+              currentOrder?.deliveryBoyLocation && (
+                <DeliveryBoyTracking data={currentOrder} />
+              )}
 
             {!showOtp ? (
               <button
