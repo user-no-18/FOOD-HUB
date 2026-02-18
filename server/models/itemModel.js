@@ -44,6 +44,13 @@ const itemSchema = new mongoose.Schema(
     ratings: {
       average: { type: Number, default: 0 },
       count: { type: Number, default: 0 },
+      users: [
+        {
+          userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+          stars: { type: Number, min: 1, max: 5 },
+          _id: false,
+        },
+      ],
     },
   },
   { timestamps: true }

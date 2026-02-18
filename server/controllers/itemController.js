@@ -260,3 +260,86 @@ export const searchItems = async (req, res) => {
     });
   }
 };
+export const rateItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const { stars } = req.body;
+
+    if (!stars || stars < 1 || stars > 5) {
+      return res
+        .status(400)
+        .json({ message: "Stars must be between 1 and 5" });
+    }
+
+    const item = await Item.findById(itemId);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    const existingRatingIndex = item.ratings.users.findIndex(
+      (r) => r.userId.toString() === req.userId
+    );
+
+    if (existingRatingIndex !== -1) {
+      const oldStars = item.ratings.users[existingRatingIndex].stars;
+      item.ratings.users[existingRatingIndex].stars = stars;
+
+      const totalStars = item.ratings.average * item.ratings.count;
+      const newTotalStars = totalStars - oldStars + stars;
+      item.ratings.average = newTotalStars / item.ratings.count;
+    } else {
+      item.ratings.users.push({
+        userId: req.userId,
+        stars: stars,
+      });
+
+      const totalStars = item.ratings.average * item.ratings.count;
+      const newTotalStars = totalStars + stars;
+      item.ratings.count += 1;
+      item.ratings.average = newTotalStars / item.ratings.count;
+    }
+
+    await item.save();
+
+    return res.status(200).json({
+      success: true,
+      message:
+        existingRatingIndex !== -1
+          ? "Rating updated successfully"
+          : "Rating submitted successfully",
+      item: item,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `rate item error: ${error.message}` });
+  }
+};
+
+export const getUserRating = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+
+    const item = await Item.findById(itemId);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    const userRating = item.ratings.users.find(
+      (r) => r.userId.toString() === req.userId
+    );
+
+    if (!userRating) {
+      return res.status(200).json({ success: true, rating: null });
+    }
+
+    return res.status(200).json({
+      success: true,
+      rating: { stars: userRating.stars },
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `get user rating error: ${error.message}` });
+  }
+};
