@@ -176,41 +176,39 @@ const UserOrderCard = ({ data }) => {
               </div>
 
               {!isCancelled && (
-                <div className="mb-6 px-1">
-                  <div className="flex items-center justify-between w-full relative">
-                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-100 -z-10 -translate-y-1/2 rounded-full" />
-                    <div
-                      className="absolute top-1/2 left-0 h-0.5 bg-[#ff4d2d] -z-10 -translate-y-1/2 transition-all duration-500 rounded-full"
-                      style={{
-                        width: `${(currentStep / (steps.length - 1)) * 100}%`,
-                      }}
-                    />
-                    {steps.map((step, i) => {
-                      const active = i <= currentStep;
-                      return (
-                        <div
-                          key={i}
-                          className="flex flex-col items-center group"
-                        >
-                          <div
-                            className={`w-3 h-3 rounded-full border-2 transition-all duration-300 z-10 ${
-                              active
-                                ? "bg-white border-[#ff4d2d] scale-125"
-                                : "bg-gray-200 border-white"
-                            }`}
-                          />
-                          <span
-                            className={`absolute top-5 text-[10px] font-medium whitespace-nowrap transition-colors duration-300 ${
-                              active ? "text-gray-900" : "text-gray-400"
-                            }`}
-                          >
-                            {step}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+               <div className="flex items-center justify-between w-full relative">
+  <div className="absolute top-1.5 left-0 w-full h-0.5 bg-gray-200 rounded-full" />
+  <div
+    className="absolute top-1.5 left-0 h-0.5 bg-[#ff4d2d] transition-all duration-500 rounded-full"
+    style={{
+      width: `${(currentStep / (steps.length - 1)) * 100}%`,
+    }}
+  />
+  {steps.map((step, i) => {
+    const active = i <= currentStep;
+    return (
+      <div
+        key={i}
+        className="flex flex-col items-center group relative z-10"
+      >
+        <div
+          className={`w-3 h-3 rounded-full border-2 transition-all duration-300 ${
+            active
+              ? "bg-[#ff4d2d] border-[#ff4d2d] scale-125"
+              : "bg-white border-gray-300"
+          }`}
+        />
+        <span
+          className={`absolute top-5 text-[10px] font-medium whitespace-nowrap transition-colors duration-300 ${
+            active ? "text-gray-900" : "text-gray-400"
+          }`}
+        >
+          {step}
+        </span>
+      </div>
+    );
+  })}
+</div>
               )}
 
               <div className="mt-8 space-y-3">
