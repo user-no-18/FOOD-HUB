@@ -376,7 +376,7 @@ export const updateOrderStatus = async (req, res) => {
           },
         },
       });
-      console.log(`Found ${nearbyDeliveryBoy.length} nearby delivery boys`);
+      
       if (nearbyDeliveryBoy.length === 0) {
         await order.save();
         return res.status(200).json({

@@ -164,7 +164,7 @@ const MyOrderCard = () => {
                   key={order._id || index}
                   variants={itemVariants}
                   layout
-                  className="bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all duration-200 overflow-hidden"
+                  className=""
                 >
                   {userData?.role === "user" ? (
                     <UserOrderCard data={order} />

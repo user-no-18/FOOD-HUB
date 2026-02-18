@@ -4,6 +4,7 @@ import { serverUrl } from "../App";
 import { useParams, useNavigate } from "react-router-dom";
 import DeliveryBoyTracking from "../components/DeliveryBoyTracking";
 import { motion } from "framer-motion";
+import socket from "../socket";
 import { 
   MdArrowBack, 
   MdPayment, 
@@ -38,6 +39,50 @@ const TrackOrderPage = () => {
     fetchOrder();
   }, [orderId]);
 
+  // 🚀 Listen for real-time delivery boy location updates
+  useEffect(() => {
+    const handleLocationUpdate = (updateData) => {
+      console.log("📍 Track page received location update:", updateData);
+      
+      // Update order state with new location if it's for this order
+      if (updateData.orderId === orderId && order) {
+        setOrder((prevOrder) => {
+          const updatedOrder = { ...prevOrder };
+          
+          // Update delivery boy location in shop orders
+          if (updatedOrder.shopOrders) {
+            updatedOrder.shopOrders = updatedOrder.shopOrders.map((shopOrder) => {
+              if (shopOrder.assignedDeliveryBoy) {
+                return {
+                  ...shopOrder,
+                  assignedDeliveryBoy: {
+                    ...shopOrder.assignedDeliveryBoy,
+                    location: {
+                      ...shopOrder.assignedDeliveryBoy.location,
+                      coordinates: [
+                        updateData.location.longitude,
+                        updateData.location.latitude,
+                      ],
+                    },
+                  },
+                };
+              }
+              return shopOrder;
+            });
+          }
+          
+          return updatedOrder;
+        });
+      }
+    };
+
+    socket.on("deliveryboy-location-update", handleLocationUpdate);
+
+    return () => {
+      socket.off("deliveryboy-location-update", handleLocationUpdate);
+    };
+  }, [orderId, order]);
+
   // Loading Skeleton
   if (loading) {
     return (
@@ -68,8 +113,9 @@ const TrackOrderPage = () => {
           <div className="flex-1">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold text-slate-900">Order Details</h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
-                Processing
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></div>
+                Live Tracking
               </span>
             </div>
             <p className="text-xs text-slate-500 font-mono mt-0.5">ID: {order._id}</p>
@@ -86,7 +132,7 @@ const TrackOrderPage = () => {
       <main className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* LEFT COLUMN: Order Summary (Sticky on Desktop) */}
+          {/* LEFT COLUMN: Order Summary */}
           <div className="lg:col-span-1 space-y-6">
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
@@ -131,7 +177,7 @@ const TrackOrderPage = () => {
                   </div>
                 </div>
 
-                {/* Mobile Total (Visible only on mobile if hidden in header) */}
+                {/* Mobile Total */}
                 <div className="sm:hidden pt-4 border-t border-slate-100">
                    <div className="flex justify-between items-center">
                       <span className="font-bold text-slate-700">Total</span>

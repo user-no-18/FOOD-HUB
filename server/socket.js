@@ -1,78 +1,87 @@
-// server/socket.js - Improved with error handling
 import User from "./models/userModel.js";
 
 export const socketHandler = (io) => {
   io.on("connection", (socket) => {
-    console.log("🔌 Client connected:", socket.id);
+    console.log("⚡ New socket connection:", socket.id);
 
     // Handle user identity
     socket.on("identity", async ({ userId }) => {
       try {
-        if (!userId) {
-          console.error("❌ No userId provided");
+        const user = await User.findById(userId);
+        if (user) {
+          user.socketId = socket.id;
+          await user.save();
+          console.log(`✅ User ${user.fullName} connected with socket ${socket.id}`);
+        }
+      } catch (error) {
+        console.error("Identity error:", error);
+      }
+    });
+
+    // Handle delivery boy location updates
+    socket.on("update-location", async ({ userId, latitude, longitude }) => {
+      try {
+        console.log(`📍 Location update from ${userId}:`, { latitude, longitude });
+        
+        const deliveryBoy = await User.findById(userId);
+        
+        if (!deliveryBoy || deliveryBoy.role !== "deliveryBoy") {
+          console.log("❌ User is not a delivery boy");
           return;
         }
 
-        const user = await User.findByIdAndUpdate(
-          userId,
-          {
-            socketId: socket.id,
-            isOnline: true,
-          },
-          { new: true }
-        );
+        // Update delivery boy's location in database
+        deliveryBoy.location = {
+          type: "Point",
+          coordinates: [longitude, latitude]
+        };
+        await deliveryBoy.save();
 
-        if (user) {
-          console.log("✅ User connected:", {
-            id: user._id,
-            name: user.fullName,
-            role: user.role,
-            socketId: socket.id
-          });
+        // Find active assignments for this delivery boy
+        const DeliveryAssignment = (await import("./models/deliveryAssignmentModel.js")).default;
+        const Order = (await import("./models/orderModel.js")).default;
+
+        const activeAssignment = await DeliveryAssignment.findOne({
+          assignedTo: userId,
+          status: "assigned"
+        }).populate("order");
+
+        if (activeAssignment && activeAssignment.order) {
+          const order = activeAssignment.order;
           
-          // Confirm identity back to client
-          socket.emit("identity_confirmed", {
-            userId: user._id,
-            socketId: socket.id
-          });
-        } else {
-          console.error("❌ User not found:", userId);
+          // Find the customer's socket ID
+          const customer = await User.findById(order.user);
+          
+          if (customer && customer.socketId) {
+            // Emit location update to customer
+            io.to(customer.socketId).emit("deliveryboy-location-update", {
+              orderId: order._id.toString(),
+              location: {
+                latitude,
+                longitude
+              }
+            });
+            
+            console.log(`✅ Location sent to customer ${customer.fullName}`);
+          }
         }
       } catch (error) {
-        console.error("❌ Identity error:", error);
+        console.error("❌ Location update error:", error);
       }
     });
 
     // Handle disconnect
-    socket.on("disconnect", async (reason) => {
-      console.log("🔌 Client disconnected:", socket.id, "Reason:", reason);
-      
+    socket.on("disconnect", async () => {
       try {
-        const user = await User.findOneAndUpdate(
-          { socketId: socket.id },
-          { 
-            socketId: null, 
-            isOnline: false 
-          },
-          { new: true }
-        );
-        
+        const user = await User.findOne({ socketId: socket.id });
         if (user) {
-          console.log("👋 User disconnected:", user.fullName);
+          console.log(`👋 User ${user.fullName} disconnected`);
+          user.socketId = null;
+          await user.save();
         }
       } catch (error) {
-        console.error("❌ Disconnect cleanup error:", error);
+        console.error("Disconnect error:", error);
       }
     });
-
-    // Optional: Heartbeat to keep connection alive
-    socket.on("ping", () => {
-      socket.emit("pong");
-    });
-  });
-
-  // Global error handler
-  io.on("error", (error) => {
-    console.error("❌ Socket.IO error:", error);
   });
 };
