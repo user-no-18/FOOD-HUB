@@ -41,12 +41,12 @@ const Checkout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { cartItems, myOrders, userId, userData } = useSelector(
-    (state) => state.user
+    (state) => state.user,
   );
 
   const subtotal = cartItems.reduce(
     (sum, i) => sum + Number(i.price) * Number(i.quantity),
-    0
+    0,
   );
   const deliveryFee = subtotal > 500 ? 0 : 40;
   const total = subtotal + deliveryFee;
@@ -55,7 +55,7 @@ const Checkout = () => {
     const marker = event.target;
     const position = marker.getLatLng();
     dispatch(
-      setMapLocation({ latitude: position.lat, longitude: position.lng })
+      setMapLocation({ latitude: position.lat, longitude: position.lng }),
     );
     getAddressbyLating(position.lat, position.lng);
   };
@@ -65,7 +65,7 @@ const Checkout = () => {
       const res = await axios.get(
         `https://api.geoapify.com/v1/geocode/reverse?lat=${latitude}&lon=${longitude}&format=json&apiKey=${
           import.meta.env.VITE_GEOAPIFY_API_KEY
-        }`
+        }`,
       );
       dispatch(setMapAddress(res?.data?.results[0]?.address_line2));
     } catch (error) {
@@ -88,8 +88,8 @@ const Checkout = () => {
       console.log("calling api:");
       const result = await axios.get(
         `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(
-          addressInput
-        )}&apiKey=${import.meta.env.VITE_GEOAPIFY_API_KEY}`
+          addressInput,
+        )}&apiKey=${import.meta.env.VITE_GEOAPIFY_API_KEY}`,
       );
       const { lat, lon } = result.data.features[0].properties;
       dispatch(setMapLocation({ latitude: lat, longitude: lon }));
@@ -128,13 +128,13 @@ const Checkout = () => {
           deliveryFee,
           totalAmount: total,
         },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (method === "cod") {
-        dispatch(setMyOrders([...myOrders, res.data]));
+        dispatch(setMyOrders([...myOrders, res.data.order]));
         dispatch(clearCart());
-        navigate("/order-page");
+        navigate("/order-page", { state: { orderId: res.data.order._id } });
         console.log(res.data);
         return;
       }
@@ -147,7 +147,7 @@ const Checkout = () => {
     } catch (error) {
       console.error("Place order error:", error);
       alert(
-        "Order failed! " + (error.response?.data?.message || error.message)
+        "Order failed! " + (error.response?.data?.message || error.message),
       );
     }
   };
@@ -177,7 +177,7 @@ const Checkout = () => {
                 razorpayPaymentId: response.razorpay_payment_id,
                 orderId: orderId,
               },
-              { withCredentials: true }
+              { withCredentials: true },
             );
 
             const paidOrder = verifyRes.data;

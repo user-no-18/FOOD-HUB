@@ -520,7 +520,7 @@ function CommonNav() {
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center gap-4">
               <button
-                onClick={() => navigate("/my-orders")}
+                onClick={() => navigate("/delivery-dashboard")}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-gray-700 font-semibold text-sm hover:bg-orange-50 transition-all duration-200 border border-transparent hover:border-orange-200"
               >
                 <TbReceipt2 className="text-xl text-orange-500" />
