@@ -11,7 +11,7 @@ import { setUserData } from "../Redux/user.slice";
 import axios from "axios";
 import { serverUrl } from "../App";
 import { setSearchItems } from "../Redux/user.slice";
-
+import { MdDashboard } from "react-icons/md";
 function CommonNav() {
   const { city, userData, pendingOrdersCount, searchItems } = useSelector(
     (state) => state.user
@@ -518,55 +518,63 @@ function CommonNav() {
             </div>
 
             {/* Desktop Actions */}
-            <div className="hidden lg:flex items-center gap-4">
-              <button
-                onClick={() => navigate("/delivery-dashboard")}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-gray-700 font-semibold text-sm hover:bg-orange-50 transition-all duration-200 border border-transparent hover:border-orange-200"
-              >
-                <TbReceipt2 className="text-xl text-orange-500" />
-                <span>My Deliveries</span>
-              </button>
+         <div className="hidden lg:flex items-center gap-4">
+  <button
+    onClick={() => navigate("/delivery-dashboard")}
+    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-gray-700 font-semibold text-sm hover:bg-orange-50 transition-all duration-200 border border-transparent hover:border-orange-200"
+  >
+    <MdDashboard className="text-xl text-orange-500" />
+    <span>Dashboard</span>
+  </button>
 
-              {/* User Info Display */}
-              <div className="flex items-center gap-3 pl-4 border-l border-gray-300">
-                <div className="text-right">
-                  <p className="text-sm font-bold text-gray-800 leading-tight">
-                    {userData?.fullName}
-                  </p>
-                  <p className="text-xs text-orange-600 font-semibold">
-                    Delivery Partner
-                  </p>
-                </div>
-                <div className="relative">
-                  <button
-                    onClick={() => setShowInfo((p) => !p)}
-                    className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 text-white font-bold text-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center justify-center"
-                  >
-                    {userData?.fullName?.[0]?.toUpperCase() || "D"}
-                  </button>
+  <button
+    onClick={() => navigate("/my-orders")}
+    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-gray-700 font-semibold text-sm hover:bg-orange-50 transition-all duration-200 border border-transparent hover:border-orange-200"
+  >
+    <TbReceipt2 className="text-xl text-orange-500" />
+    <span>My Deliveries</span>
+  </button>
 
-                  {showInfo && (
-                    <div className="absolute right-0 top-16 w-56 bg-white shadow-2xl rounded-2xl border border-gray-200 p-4 flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <div className="px-2 py-2 border-b border-gray-200">
-                        <p className="font-bold text-gray-900 text-base truncate">
-                          {userData?.fullName}
-                        </p>
-                        <p className="text-sm text-orange-600 font-semibold">
-                          Delivery Partner
-                        </p>
-                      </div>
-                      <button
-                        className="flex items-center gap-3 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 rounded-xl transition-all duration-150 font-semibold"
-                        onClick={handleLogOut}
-                      >
-                        <FiLogOut className="text-lg" />
-                        <span>Log Out</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+  {/* User Info Display */}
+  <div className="flex items-center gap-3 pl-4 border-l border-gray-300">
+    <div className="text-right">
+      <p className="text-sm font-bold text-gray-800 leading-tight">
+        {userData?.fullName}
+      </p>
+      <p className="text-xs text-orange-600 font-semibold">
+        Delivery Partner
+      </p>
+    </div>
+    <div className="relative">
+      <button
+        onClick={() => setShowInfo((p) => !p)}
+        className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 text-white font-bold text-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center justify-center"
+      >
+        {userData?.fullName?.[0]?.toUpperCase() || "D"}
+      </button>
+
+      {showInfo && (
+        <div className="absolute right-0 top-14 w-52 bg-white shadow-2xl rounded-2xl border border-gray-200 p-3 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="px-2 py-2 border-b border-gray-200">
+            <p className="font-bold text-gray-900 text-sm truncate">
+              {userData?.fullName}
+            </p>
+            <p className="text-xs text-orange-600 font-semibold">
+              Delivery Partner
+            </p>
+          </div>
+          <button
+            className="flex items-center gap-2 px-2 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 rounded-xl transition-all duration-150 font-semibold"
+            onClick={handleLogOut}
+          >
+            <FiLogOut />
+            <span>Log Out</span>
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
 
             {/* Mobile Actions */}
             <div className="flex lg:hidden items-center gap-2">

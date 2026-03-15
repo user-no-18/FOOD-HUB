@@ -372,11 +372,11 @@ export const updateOrderStatus = async (req, res) => {
               type: "Point",
               coordinates: [Number(longitude), Number(latitude)],
             },
-            $maxDistance: 5000,
+            $maxDistance: 50000,
           },
         },
       });
-      
+
       if (nearbyDeliveryBoy.length === 0) {
         await order.save();
         return res.status(200).json({
@@ -621,27 +621,27 @@ export const getCurrentOrder = async (req, res) => {
       });
 
     if (!assignment) {
-      return res.status(200).json({ 
-        success: false, 
-        message: "Order Delivered Or No order found" 
+      return res.status(200).json({
+        success: false,
+        message: "Order Delivered Or No order found",
       });
     }
-    
+
     if (!assignment.order) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "order not found" 
+      return res.status(404).json({
+        success: false,
+        message: "order not found",
       });
     }
 
     const shopOrder = assignment.order.shopOrders.find(
-      (so) => so.shop.toString() === assignment.shop._id.toString()
+      (so) => so.shop.toString() === assignment.shop._id.toString(),
     );
-    
+
     if (!shopOrder) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "shop order not found" 
+      return res.status(404).json({
+        success: false,
+        message: "shop order not found",
       });
     }
 
@@ -652,7 +652,10 @@ export const getCurrentOrder = async (req, res) => {
     }
 
     let orderLocation = { lat: null, lng: null };
-    if (assignment.order.address?.latitude && assignment.order.address?.longitude) {
+    if (
+      assignment.order.address?.latitude &&
+      assignment.order.address?.longitude
+    ) {
       orderLocation.lat = assignment.order.address.latitude;
       orderLocation.lng = assignment.order.address.longitude;
     }
@@ -660,7 +663,7 @@ export const getCurrentOrder = async (req, res) => {
     return res.status(200).json({
       success: true,
       _id: assignment._id,
-      orderId: assignment.order._id.toString(), 
+      orderId: assignment.order._id.toString(),
       user: assignment.order.user,
       shopOrder,
       deliveryAddress: assignment.order.address,
@@ -683,7 +686,7 @@ export const getOrderbyID = async (req, res) => {
       .populate("user", "fullName mobile email location")
       .populate({ path: "shopOrders.shop", model: "Shop" })
       .populate({ path: "shopOrders.assignedDeliveryBoy", model: "User" })
-      .lean(); 
+      .lean();
     if (!order) {
       return res
         .status(404)
@@ -716,64 +719,63 @@ export const getOrderbyID = async (req, res) => {
 
 export const sendDeliveryOtp = async (req, res) => {
   try {
-    const { orderId, shopId } = req.body; 
-    
+    const { orderId, shopId } = req.body;
+
     if (!orderId || !shopId) {
-      return res.status(400).json({ 
-        message: "orderId and shopId are required" 
+      return res.status(400).json({
+        message: "orderId and shopId are required",
       });
     }
 
     const order = await Order.findById(orderId).populate("user");
-    
+
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
     // Find the shop order using shopId
     const shopOrder = order.shopOrders.find(
-      (so) => so.shop.toString() === shopId.toString()
+      (so) => so.shop.toString() === shopId.toString(),
     );
 
     if (!shopOrder) {
-      return res.status(404).json({ 
-        message: "Shop order not found for this shop" 
+      return res.status(404).json({
+        message: "Shop order not found for this shop",
       });
     }
 
     // Generate OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     shopOrder.deliveryOtp = otp;
-    shopOrder.otpExpires = Date.now() + 5 * 60 * 1000; 
-   
+    shopOrder.otpExpires = Date.now() + 5 * 60 * 1000;
+
     order.markModified("shopOrders");
     await order.save();
-
 
     // Send OTP email
     await sendDeliveryAcceptedMail(order.user, otp);
 
-    console.log('📨 OTP sent to:', order.user.email);
+    console.log("📨 OTP sent to:", order.user.email);
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       success: true,
-      message: `OTP sent to ${order.user.fullName}` 
+      message: `OTP sent to ${order.user.fullName}`,
     });
   } catch (error) {
-    console.error('Send delivery OTP error:', error);
-    return res.status(500).json({ 
-      message: `Send delivery OTP error: ${error.message}` 
+    console.error("Send delivery OTP error:", error);
+    return res.status(500).json({
+      message: `Send delivery OTP error: ${error.message}`,
     });
   }
 };
 
 export const verifyDeliveryOtp = async (req, res) => {
   try {
-    const { orderId, shopId, otp } = req.body; 
+    const { orderId, shopId, otp } = req.body;
 
     if (!orderId || !shopId || !otp) {
-      return res.status(400).json({ 
-        message: "orderId, shopId, and otp are required" 
+      return res.status(400).json({
+        message: "orderId, shopId, and otp are required",
       });
     }
 
@@ -785,7 +787,7 @@ export const verifyDeliveryOtp = async (req, res) => {
 
     // Find the shop order
     const shopOrder = order.shopOrders.find(
-      (so) => so.shop.toString() === shopId.toString()
+      (so) => so.shop.toString() === shopId.toString(),
     );
 
     if (!shopOrder) {
@@ -805,7 +807,7 @@ export const verifyDeliveryOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    console.log('OTP verified successfully');
+    console.log("OTP verified successfully");
 
     // Update order status
     shopOrder.status = "delivered";
@@ -816,14 +818,21 @@ export const verifyDeliveryOtp = async (req, res) => {
     order.markModified("shopOrders");
     await order.save();
 
-    // Delete the delivery assignment
-    await DeliveryAssignment.deleteOne({
-      order: order._id,
-      shop: shopId,
-      assignedTo: shopOrder.assignedDeliveryBoy,
-    });
+    const assignment = await DeliveryAssignment.findOneAndUpdate(
+      {
+        order: order._id,
+        shop: shopId,
+        assignedTo: shopOrder.assignedDeliveryBoy,
+        status: "assigned",
+      },
+      {
+        status: "completed",
+       /*  completedAt: Date.now(), */
+      },
+      { new: true },
+    );
 
-    console.log(' Order delivered successfully');
+    console.log(" Order delivered successfully");
 
     //  socket
     const io = req.app.get("io");
@@ -831,18 +840,130 @@ export const verifyDeliveryOtp = async (req, res) => {
       io.to(order.user.socketId).emit("order-delivered", {
         orderId: order._id,
         shopId: shopId,
-        status: "delivered"
+        status: "delivered",
       });
     }
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       success: true,
-      message: "Order delivered successfully" 
+      message: "Order delivered successfully",
     });
   } catch (error) {
-    console.error('Verify delivery OTP error:', error);
-    return res.status(500).json({ 
-      message: `Verify delivery OTP error: ${error.message}` 
+    console.error("Verify delivery OTP error:", error);
+    return res.status(500).json({
+      message: `Verify delivery OTP error: ${error.message}`,
+    });
+  }
+};
+
+export const getDeliveryBoyAnalytics = async (req, res) => {
+  try {
+    const deliveryBoyId = req.userId;
+
+    // Get all completed deliveries by this boy
+    const completedAssignments = await DeliveryAssignment.find({
+      assignedTo: deliveryBoyId,
+      status: "completed",
+    })
+      .populate({
+        path: "order",
+        populate: [
+          { path: "user", select: "fullName mobile" },
+          { path: "shopOrders.shop", select: "name" },
+        ],
+      })
+      .populate("shop", "name")
+      .sort({ acceptedAt: -1 });
+
+    // Calculate 24-hour activity (hourly breakdown)
+    const now = new Date();
+    const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const hourlyActivity = Array.from({ length: 24 }, (_, i) => ({
+      hour: `${i}:00`,
+      deliveries: 0,
+      earnings: 0,
+    }));
+
+    let totalEarnings = 0;
+    let totalDeliveries = 0;
+    let todayEarnings = 0;
+    let todayDeliveries = 0;
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    completedAssignments.forEach((assignment) => {
+      if (!assignment.order) return;
+
+      const shopOrder = assignment.order.shopOrders.find(
+        (so) => so.shop._id.toString() === assignment.shop._id.toString(),
+      );
+
+      if (!shopOrder) return;
+
+      const deliveryFee = Math.ceil(shopOrder.subtotal * 0.1); // 10% of subtotal as delivery fee
+      totalEarnings += deliveryFee;
+      totalDeliveries++;
+
+      // Today's stats
+      const deliveryDate = new Date(
+        shopOrder.deliveredAt || assignment.acceptedAt,
+      );
+      if (deliveryDate >= todayStart) {
+        todayEarnings += deliveryFee;
+        todayDeliveries++;
+      }
+
+      // Hourly breakdown (last 24 hours)
+      if (deliveryDate >= last24Hours) {
+        const hour = deliveryDate.getHours();
+        hourlyActivity[hour].deliveries += 1;
+        hourlyActivity[hour].earnings += deliveryFee;
+      }
+    });
+
+    // Format delivery history
+    const deliveryHistory = completedAssignments
+      .filter((a) => a.order)
+      .map((assignment) => {
+        const shopOrder = assignment.order.shopOrders.find(
+          (so) => so.shop._id.toString() === assignment.shop._id.toString(),
+        );
+
+        const deliveryFee = shopOrder ? Math.ceil(shopOrder.subtotal * 0.1) : 0;
+
+        return {
+          _id: assignment._id,
+          orderId: assignment.order._id,
+          shopName: assignment.shop?.name || "Unknown Shop",
+          customerName: assignment.order.user?.fullName || "Customer",
+          customerMobile: assignment.order.user?.mobile || "",
+          deliveryAddress: assignment.order.address?.text || "",
+          items: shopOrder?.shopOrderItems?.length || 0,
+          subtotal: shopOrder?.subtotal || 0,
+          deliveryFee,
+          deliveredAt: shopOrder?.deliveredAt || assignment.acceptedAt,
+          status: shopOrder?.status || "completed",
+        };
+      });
+
+    return res.status(200).json({
+      success: true,
+      analytics: {
+        totalEarnings,
+        totalDeliveries,
+        todayEarnings,
+        todayDeliveries,
+        hourlyActivity,
+      },
+      deliveryHistory,
+    });
+  } catch (error) {
+    console.error("Error fetching delivery boy analytics:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 };

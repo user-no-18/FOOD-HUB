@@ -1,163 +1,298 @@
-import React, { useEffect, useState } from "react";
-
-import { useSelector } from "react-redux";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { serverUrl } from "../App";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
-import { MdTrendingUp, MdHistory, MdAttachMoney, MdDeliveryDining } from "react-icons/md";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  MdArrowBack,
+  MdDeliveryDining,
+  MdAttachMoney,
+  MdTrendingUp,
+  MdAccessTime,
+} from "react-icons/md";
+import { FaBox, FaRupeeSign, FaMotorcycle } from "react-icons/fa";
+import CommonNav from "../components/CommonNav";
 
-const DeliveryboyDashboard = () => {
-  const { user } = useSelector((state) => state.user);
-  const [history, setHistory] = useState([]);
-  const [stats, setStats] = useState([]);
+const DeliveryBoyDashboardPage = () => {
+  const navigate = useNavigate();
+  const [analytics, setAnalytics] = useState(null);
+  const [deliveryHistory, setDeliveryHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        // Fetch assignments/orders for delivery boy
-        const { data } = await axios.get(`${serverUrl}/order/get-delivery-boy-assignments`, {
-            headers: { Authorization: localStorage.getItem("token") },
-        });
-        
-        if (data.orders) {
-            setHistory(data.orders);
-            processStats(data.orders);
-        }
-      } catch (error) {
-        console.error("Failed to fetch delivery history", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchAnalytics();
+  }, []);
 
-    if (user && user.role === "delivery") {
-      fetchHistory();
+  const fetchAnalytics = async () => {
+    try {
+      const res = await axios.get(
+        `${serverUrl}/api/order/delivery-analytics`,
+        { withCredentials: true }
+      );
+      setAnalytics(res.data.analytics);
+      setDeliveryHistory(res.data.deliveryHistory);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [user]);
-
-  const processStats = (orders) => {
-    const dailyStats = {};
-    
-    orders.forEach(order => {
-        const date = new Date(order.createdAt).toLocaleDateString('en-US', { weekday: 'short' });
-        if (!dailyStats[date]) {
-            dailyStats[date] = { name: date, orders: 0, earnings: 0 };
-        }
-        dailyStats[date].orders += 1;
-        // Assuming a fixed delivery fee or percentage, or extracting it from order if available
-        // Here simplified as 50 per order for visualization if not present
-        dailyStats[date].earnings += order.deliveryFee || 50; 
-    });
-
-    // Convert to array and sort (logic can be improved for correct day ordering)
-    setStats(Object.values(dailyStats));
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString(undefined, {
-      year: "numeric",
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
       month: "short",
-      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       <CommonNav />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <MdDeliveryDining className="text-[#ff4d2d]" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <MdArrowBack className="text-xl" />
+            <span className="font-medium">Back to Home</span>
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900">
             Delivery Dashboard
-        </h1>
-
-        {/* Stats Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-gray-500 text-sm font-medium">Total Delivered</h3>
-                    <span className="p-2 bg-blue-50 text-blue-600 rounded-lg"><MdHistory /></span>
-                </div>
-                <p className="text-3xl font-bold text-gray-900">{history.filter(o => o.status === 'delivered').length}</p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-gray-500 text-sm font-medium">Total Earnings</h3>
-                    <span className="p-2 bg-green-50 text-green-600 rounded-lg"><MdAttachMoney /></span>
-                </div>
-                {/* Mock calculation based on orders */}
-                <p className="text-3xl font-bold text-gray-900">₹{history.filter(o => o.status === 'delivered').length * 50}</p> 
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-gray-500 text-sm font-medium">Pending Orders</h3>
-                    <span className="p-2 bg-orange-50 text-orange-600 rounded-lg"><MdTrendingUp /></span>
-                </div>
-                <p className="text-3xl font-bold text-gray-900">{history.filter(o => o.status !== 'delivered' && o.status !== 'cancelled').length}</p>
-            </div>
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Track your performance and earnings
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Chart Section */}
-            <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-6">Daily Analysis</h3>
-                <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={stats} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10} />
-                            <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
-                            <Tooltip 
-                                contentStyle={{backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                                cursor={{fill: '#f9fafb'}}
-                            />
-                            <Legend wrapperStyle={{paddingTop: '20px'}} />
-                            <Bar dataKey="orders" name="Orders" fill="#ff4d2d" radius={[4, 4, 0, 0]} barSize={20} />
-                            <Bar dataKey="earnings" name="Earnings (₹)" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <FaRupeeSign className="text-green-600 text-xl" />
+              </div>
+              <MdTrendingUp className="text-green-500 text-2xl" />
             </div>
+            <p className="text-gray-600 text-sm font-medium">Total Earnings</p>
+            <p className="text-3xl font-bold text-gray-900 mt-1">
+              ₹{analytics?.totalEarnings || 0}
+            </p>
+          </div>
 
-            {/* Recent List Section */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-[30rem] overflow-hidden flex flex-col">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Recent History</h3>
-                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                    {loading ? (
-                        <p className="text-center text-gray-500 py-10">Loading...</p>
-                    ) : history.length === 0 ? (
-                        <p className="text-center text-gray-500 py-10">No orders found.</p>
-                    ) : (
-                        <div className="space-y-4">
-                            {history.slice(0, 10).map((order) => (
-                                <div key={order._id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-xs font-bold text-gray-900">#{order._id.slice(-6).toUpperCase()}</span>
-                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                            order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                                            order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                            'bg-blue-100 text-blue-700'
-                                        }`}>
-                                            {order.status.toUpperCase()}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between text-xs text-gray-500">
-                                        <span>{formatDate(order.createdAt)}</span>
-                                        <span className="font-semibold text-gray-700">₹{order.totalAmount?.toFixed(0)}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <FaBox className="text-blue-600 text-xl" />
+              </div>
+              <MdDeliveryDining className="text-blue-500 text-2xl" />
             </div>
+            <p className="text-gray-600 text-sm font-medium">
+              Total Deliveries
+            </p>
+            <p className="text-3xl font-bold text-gray-900 mt-1">
+              {analytics?.totalDeliveries || 0}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <MdAttachMoney className="text-orange-600 text-2xl" />
+              </div>
+              <MdAccessTime className="text-orange-500 text-2xl" />
+            </div>
+            <p className="text-gray-600 text-sm font-medium">Today's Earnings</p>
+            <p className="text-3xl font-bold text-gray-900 mt-1">
+              ₹{analytics?.todayEarnings || 0}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <FaMotorcycle className="text-purple-600 text-xl" />
+              </div>
+              <MdAccessTime className="text-purple-500 text-2xl" />
+            </div>
+            <p className="text-gray-600 text-sm font-medium">
+              Today's Deliveries
+            </p>
+            <p className="text-3xl font-bold text-gray-900 mt-1">
+              {analytics?.todayDeliveries || 0}
+            </p>
+          </div>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Deliveries Chart */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              24-Hour Delivery Activity
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={analytics?.hourlyActivity || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="hour" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar
+                  dataKey="deliveries"
+                  fill="#3b82f6"
+                  name="Deliveries"
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Earnings Chart */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              24-Hour Earnings Trend
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={analytics?.hourlyActivity || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="hour" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="earnings"
+                  stroke="#10b981"
+                  strokeWidth={3}
+                  name="Earnings (₹)"
+                  dot={{ fill: "#10b981", r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Delivery History */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">
+            Delivery History
+          </h3>
+
+          {deliveryHistory.length === 0 ? (
+            <div className="text-center py-12">
+              <FaBox className="text-gray-300 text-5xl mx-auto mb-4" />
+              <p className="text-gray-500">No delivery history yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      Order ID
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      Shop
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      Customer
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      Items
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      Subtotal
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      Earnings
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">
+                      Delivered At
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deliveryHistory.map((delivery) => (
+                    <tr
+                      key={delivery._id}
+                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="py-4 px-4">
+                        <span className="font-mono text-sm text-gray-900">
+                          #{delivery.orderId.slice(-8).toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="text-sm text-gray-900">
+                          {delivery.shopName}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div>
+                          <p className="text-sm text-gray-900">
+                            {delivery.customerName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {delivery.customerMobile}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="text-sm text-gray-700">
+                          {delivery.items} items
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="text-sm font-medium text-gray-900">
+                          ₹{delivery.subtotal}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="text-sm font-bold text-green-600">
+                          ₹{delivery.deliveryFee}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="text-xs text-gray-500">
+                          {formatDate(delivery.deliveredAt)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default DeliveryboyDashboard;
+export default DeliveryBoyDashboardPage;

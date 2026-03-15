@@ -109,10 +109,10 @@ const App = () => {
         path="/shop-items/:shopId"
         element={userData ? <Shop /> : <Navigate to={"/signin"} />}
       />
-      <Route
-        path="/delivery-dashboard"
-        element={userData ? <DeliveryboyDashboard /> : <Navigate to={"/signin"} />}
-      />
+    <Route
+  path="/delivery-dashboard"
+  element={userData ? <DeliveryboyDashboard /> : <Navigate to={"/signin"} />}
+/>
     </Routes>
   );
 };
