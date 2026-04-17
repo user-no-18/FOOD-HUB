@@ -25,19 +25,20 @@ const SignUp = () => {
 const dispatch = useDispatch()
 
    const handleSignUp = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      setErr("")
+      setErr("");
       const result = await axios.post(
         `${serverUrl}/api/auth/signup`,
         { fullName, email, mobile, password, role },
         { withCredentials: true }
-      ); dispatch(setUserData(result.data))
-      setLoading(false)
-     console.log(result.data);
+      );
+      dispatch(setUserData(result.data));
+      setLoading(false);
     } catch (error) {
-       setErr('Enter details')
-      console.log(error.message);
+      // show backend message if available, fallback to generic
+      setErr(error.response?.data?.message || "Something went wrong. Please try again.");
+      setLoading(false);
     }
   };
 

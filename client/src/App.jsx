@@ -41,18 +41,21 @@ const App = () => {
   useEffect(() => {
     if (userData && userData._id) {
       socket.connect();
-
       socket.emit("identity", { userId: userData._id });
 
-      console.log("Socket connected for user:", userData._id);
+      // re-emit identity after auto-reconnect so server re-binds the socketId
+      const onReconnect = () => {
+        socket.emit("identity", { userId: userData._id });
+      };
+      socket.on("reconnect", onReconnect);
+
+      return () => {
+        socket.off("reconnect", onReconnect);
+        socket.disconnect();
+      };
     } else {
       socket.disconnect();
     }
-
-    // Cleanup on unmount
-    return () => {
-      socket.disconnect();
-    };
   }, [userData]);
 
   return (

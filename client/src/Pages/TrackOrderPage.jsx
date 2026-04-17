@@ -39,49 +39,42 @@ const TrackOrderPage = () => {
     fetchOrder();
   }, [orderId]);
 
-  // 🚀 Listen for real-time delivery boy location updates
+  // Listen for real-time delivery boy location updates
+  // dep array is empty — listener attaches once, uses functional setOrder to avoid stale closure
   useEffect(() => {
     const handleLocationUpdate = (updateData) => {
-      console.log("📍 Track page received location update:", updateData);
-      
-      // Update order state with new location if it's for this order
-      if (updateData.orderId === orderId && order) {
-        setOrder((prevOrder) => {
-          const updatedOrder = { ...prevOrder };
-          
-          // Update delivery boy location in shop orders
-          if (updatedOrder.shopOrders) {
-            updatedOrder.shopOrders = updatedOrder.shopOrders.map((shopOrder) => {
-              if (shopOrder.assignedDeliveryBoy) {
-                return {
-                  ...shopOrder,
-                  assignedDeliveryBoy: {
-                    ...shopOrder.assignedDeliveryBoy,
-                    location: {
-                      ...shopOrder.assignedDeliveryBoy.location,
-                      coordinates: [
-                        updateData.location.longitude,
-                        updateData.location.latitude,
-                      ],
-                    },
-                  },
-                };
-              }
-              return shopOrder;
-            });
-          }
-          
-          return updatedOrder;
-        });
-      }
+      if (updateData.orderId !== orderId) return;
+
+      setOrder((prev) => {
+        if (!prev) return prev;
+        const updated = { ...prev };
+
+        if (updated.shopOrders) {
+          updated.shopOrders = updated.shopOrders.map((shopOrder) => {
+            if (!shopOrder.assignedDeliveryBoy) return shopOrder;
+            return {
+              ...shopOrder,
+              assignedDeliveryBoy: {
+                ...shopOrder.assignedDeliveryBoy,
+                location: {
+                  type: "Point",
+                  coordinates: [
+                    updateData.location.longitude,
+                    updateData.location.latitude,
+                  ],
+                },
+              },
+            };
+          });
+        }
+
+        return updated;
+      });
     };
 
     socket.on("deliveryboy-location-update", handleLocationUpdate);
-
-    return () => {
-      socket.off("deliveryboy-location-update", handleLocationUpdate);
-    };
-  }, [orderId, order]);
+    return () => socket.off("deliveryboy-location-update", handleLocationUpdate);
+  }, [orderId]);
 
   // Loading Skeleton
   if (loading) {

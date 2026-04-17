@@ -8,34 +8,18 @@ import socket from '../socket';
  */
 export const useDeliveryBoyLocationTracker = (userData, intervalMs = 5000) => {
   useEffect(() => {
-    if (!userData || userData.role !== 'deliveryBoy') {
-      return;
-    }
-
-    console.log('🚀 Starting location tracker for delivery boy:', userData.fullName);
+    if (!userData || userData.role !== 'deliveryBoy') return;
 
     let intervalId;
     let lastUpdate = 0;
-    const minUpdateInterval = 2000; // Minimum 2 seconds between updates
+    const minUpdateInterval = 2000;
 
     const sendLocation = (latitude, longitude) => {
       const now = Date.now();
-      
-      // Prevent sending updates too frequently
-      if (now - lastUpdate < minUpdateInterval) {
-        return;
-      }
-      
+      if (now - lastUpdate < minUpdateInterval) return;
+      if (!socket.connected) return; // don't queue up updates while offline
       lastUpdate = now;
-      
-      console.log('📍 Sending location update:', { latitude, longitude });
-      
-      // Emit location to server
-      socket.emit('update-location', {
-        userId: userData._id,
-        latitude,
-        longitude
-      });
+      socket.emit('update-location', { userId: userData._id, latitude, longitude });
     };
 
     const updateLocation = (position) => {
@@ -44,59 +28,33 @@ export const useDeliveryBoyLocationTracker = (userData, intervalMs = 5000) => {
     };
 
     const handleError = (error) => {
-      // Only log significant errors, ignore timeout errors from periodic checks
-      if (error.code === 3) {
-        // Timeout - this is normal, just skip this update
-        console.log('⏱️ Location update timeout (normal - will retry)');
-        return;
-      }
-      
-      console.error('❌ Geolocation error:', error);
-      
-      if (error.code === 1) {
-        console.error('📍 Location permission denied');
-      } else if (error.code === 2) {
-        console.error('📍 Location unavailable');
-      }
+      if (error.code === 3) return; // timeout — normal, will retry
+      console.error('Geolocation error:', error.code, error.message);
     };
 
-    // Single interval-based approach (more reliable than watchPosition)
-    if (navigator.geolocation) {
-      // Get initial position
-      navigator.geolocation.getCurrentPosition(
-        updateLocation,
-        handleError,
-        {
-          enableHighAccuracy: true,
-          timeout: 8000,
-          maximumAge: 0
-        }
-      );
-
-      // Then update at regular intervals
-      intervalId = setInterval(() => {
-        navigator.geolocation.getCurrentPosition(
-          updateLocation,
-          handleError,
-          {
-            enableHighAccuracy: false, // Use false for battery saving
-            timeout: 5000,              // Shorter timeout for interval updates
-            maximumAge: 3000            // Allow slightly cached positions
-          }
-        );
-      }, intervalMs);
-      
-      console.log(`✅ Location tracker started (updates every ${intervalMs}ms)`);
-    } else {
-      console.error('❌ Geolocation not supported by this browser');
+    if (!navigator.geolocation) {
+      console.error('Geolocation not supported');
+      return;
     }
 
-    // Cleanup
+    // get initial position
+    navigator.geolocation.getCurrentPosition(updateLocation, handleError, {
+      enableHighAccuracy: true,
+      timeout: 8000,
+      maximumAge: 0,
+    });
+
+    // then poll every intervalMs
+    intervalId = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(updateLocation, handleError, {
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 3000,
+      });
+    }, intervalMs);
+
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-        console.log('🛑 Location tracker stopped');
-      }
+      if (intervalId) clearInterval(intervalId);
     };
   }, [userData, intervalMs]);
 };

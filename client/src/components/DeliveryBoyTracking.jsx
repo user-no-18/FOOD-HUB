@@ -54,41 +54,17 @@ const DeliveryBoyTracking = ({ data }) => {
 
   // Listen for real-time location updates from socket
   useEffect(() => {
-    console.log('\n🎧 DeliveryBoyTracking Component Mounted');
-    console.log('   Socket connected:', socket.connected);
-    console.log('   Socket ID:', socket.id);
-    console.log('   Initial delivery boy position:', deliveryBoyPosition);
-    
     const handleLocationUpdate = (updateData) => {
-      console.log('\n📍 ✅ DeliveryBoyTracking received location update!');
-      console.log('   Order ID:', updateData.orderId);
-      console.log('   New Location:', updateData.location);
-      
-      // Update delivery boy position
       if (updateData.location) {
-        const newPosition = {
+        setDeliveryBoyPosition({
           lat: updateData.location.latitude,
           lng: updateData.location.longitude,
-        };
-        
-        setDeliveryBoyPosition(newPosition);
-        console.log('✅ Map position updated to:', newPosition);
+        });
       }
     };
 
-    // Subscribe to location updates
     socket.on("deliveryboy-location-update", handleLocationUpdate);
-    
-    console.log('✅ Event listener attached for "deliveryboy-location-update"');
-
-    // Test: Emit a test message to verify socket is working
-    socket.emit('test-from-customer', { message: 'Customer is listening!' });
-
-    // Cleanup on unmount
-    return () => {
-      console.log('🧹 DeliveryBoyTracking: Cleaning up location update listener');
-      socket.off("deliveryboy-location-update", handleLocationUpdate);
-    };
+    return () => socket.off("deliveryboy-location-update", handleLocationUpdate);
   }, []);
 
   if (!deliveryBoyPosition.lat || !deliveryBoyPosition.lng || !customerLat || !customerLng) {

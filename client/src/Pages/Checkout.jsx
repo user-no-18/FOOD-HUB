@@ -171,24 +171,25 @@ const Checkout = () => {
         order_id: razorOrder.id,
         handler: async function (response) {
           try {
+            // send all 3 fields — backend now does HMAC-SHA256 signature check
             const verifyRes = await axios.post(
               `${serverUrl}/api/order/verify-order`,
               {
                 razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
                 orderId: orderId,
               },
               { withCredentials: true },
             );
 
             const paidOrder = verifyRes.data;
-
             dispatch(setMyOrders([...myOrders, paidOrder]));
             dispatch(clearCart());
             navigate("/order-page");
-
-            console.log("Payment verified and order saved:", paidOrder);
           } catch (verifyError) {
             console.error("Payment verification failed:", verifyError);
+            alert("Payment verification failed. Please contact support.");
           }
         },
         prefill: {
