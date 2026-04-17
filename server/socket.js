@@ -1,4 +1,6 @@
 import User from "./models/userModel.js";
+import DeliveryAssignment from "./models/deliveryAssignmentModel.js";
+import Order from "./models/orderModel.js";
 
 export const socketHandler = (io) => {
   io.on("connection", (socket) => {
@@ -7,6 +9,11 @@ export const socketHandler = (io) => {
     // Handle user identity
     socket.on("identity", async ({ userId }) => {
       try {
+        // basic guard: userId must be a non-empty string
+        if (!userId || typeof userId !== "string") {
+          console.log("❌ Invalid userId on identity event");
+          return;
+        }
         const user = await User.findById(userId);
         if (user) {
           user.socketId = socket.id;
@@ -38,9 +45,6 @@ export const socketHandler = (io) => {
         await deliveryBoy.save();
 
         // Find active assignments for this delivery boy
-        const DeliveryAssignment = (await import("./models/deliveryAssignmentModel.js")).default;
-        const Order = (await import("./models/orderModel.js")).default;
-
         const activeAssignment = await DeliveryAssignment.findOne({
           assignedTo: userId,
           status: "assigned"

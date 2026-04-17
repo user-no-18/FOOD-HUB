@@ -3,16 +3,20 @@ import dotenv from "dotenv";
 dotenv.config();
 export const isAuth = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
-    if (!token) return res.status(400).json({ message: "token not found" });
+    // support both cookie and Authorization: Bearer header
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "Unauthorized: no token" });
+
     const decodetoken = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decodetoken)
-      return res.status(400).json({ message: "user not found" });
-    console.log(decodetoken)
-    req.userId= decodetoken.id
+    if (!decodetoken) return res.status(401).json({ message: "Unauthorized: invalid token" });
+
+    req.userId = decodetoken.id;
     next();
+  } catch (error) {
+    // JWT errors (expired, malformed) are client errors, not server errors
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired, please login again" });
+    }
+    return res.status(401).json({ message: "Unauthorized" });
   }
-   catch (error) {
-    return res.status(500).json({ message: "isAuth error" });
-   }
 };

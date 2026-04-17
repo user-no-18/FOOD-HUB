@@ -4,6 +4,7 @@ import Order from "../models/orderModel.js";
 import DeliveryAssignment from "../models/deliveryAssignmentModel.js";
 import { sendDeliveryAcceptedMail } from "../utils/mail.js";
 import Razorpay from "razorpay";
+import crypto from "crypto";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -183,13 +184,21 @@ export const placeOrder = async (req, res) => {
 };
 export const verifyPayment = async (req, res) => {
   try {
-    const { razorpayPaymentId, orderId } = req.body;
-    const payment = await instance.payments.fetch(razorpayPaymentId);
+    const { razorpayPaymentId, razorpayOrderId, razorpaySignature, orderId } = req.body;
 
-    if (!payment || payment.status != "captured") {
-      return res
-        .status(400)
-        .json({ success: false, message: "Payment not successful" });
+    if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+      return res.status(400).json({ success: false, message: "Missing payment verification fields" });
+    }
+
+    // HMAC-SHA256 signature verification — this is the correct Razorpay method
+    const body = razorpayOrderId + "|" + razorpayPaymentId;
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body)
+      .digest("hex");
+
+    if (expectedSignature !== razorpaySignature) {
+      return res.status(400).json({ success: false, message: "Payment verification failed: signature mismatch" });
     }
 
     const order = await Order.findById(orderId);

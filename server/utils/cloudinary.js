@@ -10,10 +10,12 @@ cloudinary.config({
 const uploadOnCloudinary = async (file) => {
   try {
     const result = await cloudinary.uploader.upload(file);
-    fs.unlinkSync(file);
+    // only unlink if the file still exists after successful upload
+    if (fs.existsSync(file)) fs.unlinkSync(file);
     return result.secure_url;
   } catch (error) {
-    fs.unlinkSync(file);
+    // safely clean up temp file on failure too
+    if (fs.existsSync(file)) fs.unlinkSync(file);
     console.error("Cloudinary upload error:", error);
     throw error; 
   }

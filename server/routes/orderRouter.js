@@ -16,8 +16,6 @@ orderRouter.post('/verify-otp', isAuth, verifyDeliveryOtp);
 orderRouter.patch('/update-status/:orderId/:shopId', isAuth, updateOrderStatus);
 orderRouter.post('/accept-order/:assignmentId', isAuth, acceptOrder);
 orderRouter.get('/get-order-by-id/:orderId', isAuth, getOrderbyID);
-orderRouter.get('/get-order-by-id/:orderId', isAuth, getOrderbyID);
-orderRouter.get('/get-order-by-id/:orderId', isAuth, getOrderbyID);
 
 orderRouter.get('/delivery-analytics', isAuth, getDeliveryBoyAnalytics);
 export default orderRouter

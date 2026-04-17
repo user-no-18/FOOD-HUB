@@ -33,7 +33,7 @@ The Foodhub Team`, // plain text fallback
         <p>Hello,</p>
         <p>Your one-time password (OTP) is:</p>
         <h3 style="color: #007BFF;">${otp}</h3>
-        <p>Please use this OTP within <strong>10 minutes</strong>. Do not share it with anyone.</p>
+        <p>Please use this OTP within <strong>5 minutes</strong>. Do not share it with anyone.</p>
         <p>Thank you,<br><strong>The Foodhub Team</strong></p>
         <hr style="border: none; border-top: 1px solid #eee;">
         <small style="color: #999;">If you did not request this OTP, please ignore this email.</small>

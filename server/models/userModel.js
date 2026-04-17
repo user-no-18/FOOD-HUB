@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema(
     },
     mobile: {
       type: String,
-      required: true,
+      required: false,
     },
     role: {
       type: String,
@@ -28,10 +28,7 @@ const userSchema = new mongoose.Schema(
       default: "user",
       required: true,
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+    // createdAt is handled by { timestamps: true } below — do not redefine
     resetOtp: {
       type: String,
     },
@@ -49,7 +46,7 @@ const userSchema = new mongoose.Schema(
       type: { type: String, enum: ["Point"], default: "Point" },
       coordinates: { type: [Number], default: [0, 0] },
     },
-    isOnlne: {
+    isOnline: {
       type: Boolean,
       default: false,
     },

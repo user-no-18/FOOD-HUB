@@ -7,6 +7,10 @@ export const signUp = async (req, res) => {
   try {
     const { fullName, email, password, mobile, role } = req.body;
 
+    if (!fullName || !email || !password) {
+      return res.status(400).json({ message: "fullName, email and password are required" });
+    }
+
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: "User already exists" });
 
@@ -15,11 +19,13 @@ export const signUp = async (req, res) => {
         .status(400)
         .json({ message: "Password must be at least 6 characters long" });
 
-    const mobileStr = String(mobile);
-    if (mobileStr.length !== 10)
-      return res
-        .status(400)
-        .json({ message: "Mobile number must be 10 digits long" });
+    if (mobile) {
+      const mobileStr = String(mobile);
+      if (mobileStr.length !== 10)
+        return res
+          .status(400)
+          .json({ message: "Mobile number must be 10 digits long" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -27,20 +33,19 @@ export const signUp = async (req, res) => {
       fullName,
       email,
       password: hashedPassword,
-      mobile: mobileStr,
+      mobile: mobile ? String(mobile) : undefined,
       role,
     });
 
     await newUser.save();
 
-    const token = await generateToken(newUser._id);
+    const token = generateToken(newUser._id);
     res.cookie("token", token, {
       httpOnly: true,
       secure: false,
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    console.log(newUser);
     res.status(201).json({
       user: {
         _id: newUser._id,
@@ -61,6 +66,10 @@ export const signIn = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
     const user = await User.findOne({ email });
 
     if (!user)
@@ -69,7 +78,7 @@ export const signIn = async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid email or password" });
 
-    const token = await generateToken(user._id);
+    const token = generateToken(user._id);
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -133,7 +142,7 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
     //comparing otp
-    if(otp != user.resetOtp){
+    if(otp !== user.resetOtp){
       return res.status(400).json({ message: "Invalid OTP" });
     }
     //
@@ -166,32 +175,41 @@ export const resetPassword = async (req, res) => {
 }
 
 //this controller will handle google authentication
-export const googleAuth=async (req,res)=>{
-    try {
-        const {fullName,email,role,mobile}=req.body
-        let user=await User.findOne({email})
-        // if user already exists then no need to create new user
-        if(!user){
-          user=await User.create({
-            fullName,
-            email,
-            role,mobile
-        })
-        }
-        //generate token
-        const token=await generateToken(user._id)
+export const googleAuth = async (req, res) => {
+  try {
+    const { fullName, email, role, mobile } = req.body;
 
-        res.cookie("token",token,{
-            httpOnly:true,
-            maxAge:10*365*24*60*60*1000,
-            secure:false,
-            sameSite:"Strict"
-        })
-
-        return res.status(201).json(user)
-
-    } catch (error) {
-        console.log(error)
-        return res.status(500).json({message:`signupwithgoogle error ${error}`})
+    if (!fullName || !email) {
+      return res.status(400).json({ message: "fullName and email are required" });
     }
-}
+
+    let user = await User.findOne({ email });
+    const isNewUser = !user;
+
+    // if user already exists then no need to create new user
+    if (!user) {
+      user = await User.create({
+        fullName,
+        email,
+        role,
+        mobile,
+      });
+    }
+
+    //generate token
+    const token = generateToken(user._id);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
+      secure: false,
+      sameSite: "Strict",
+    });
+
+    // 201 for new user created, 200 for existing user signing in
+    return res.status(isNewUser ? 201 : 200).json(user);
+  } catch (error) {
+    console.error("googleAuth error:", error);
+    return res.status(500).json({ message: `signupwithgoogle error ${error.message}` });
+  }
+};

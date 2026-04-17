@@ -16,8 +16,7 @@ const deliveryAssignmentSchema = new mongoose.Schema({
         default: "broadcasted",
     },
     acceptedAt: Date,
-    createdAt: { type: Date, default: Date.now },
-});
+}, { timestamps: true });
 
 const DeliveryAssignment = mongoose.model(
     "DeliveryAssignment",
