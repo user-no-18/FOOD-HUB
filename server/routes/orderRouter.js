@@ -1,6 +1,7 @@
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
 import { acceptOrder, getCurrentOrder, getdeliveryBoyAssignmemts, getMyoders, getOrderbyID, placeOrder, sendDeliveryOtp, updateOrderStatus, verifyDeliveryOtp , verifyPayment , getDeliveryBoyAnalytics} from '../controllers/orderController.js';
+import { razorpayWebhook } from '../controllers/webhookController.js';
 
 
 
@@ -16,6 +17,8 @@ orderRouter.post('/verify-otp', isAuth, verifyDeliveryOtp);
 orderRouter.patch('/update-status/:orderId/:shopId', isAuth, updateOrderStatus);
 orderRouter.post('/accept-order/:assignmentId', isAuth, acceptOrder);
 orderRouter.get('/get-order-by-id/:orderId', isAuth, getOrderbyID);
+
+orderRouter.post('/webhook', razorpayWebhook);
 
 orderRouter.get('/delivery-analytics', isAuth, getDeliveryBoyAnalytics);
 export default orderRouter
