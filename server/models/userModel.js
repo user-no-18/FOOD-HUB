@@ -54,6 +54,11 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 userSchema.index({ location: "2dsphere" });
+
+// Add performance indexes
+userSchema.index({ socketId: 1 }, { sparse: true });
+userSchema.index({ role: 1 });
+
 const User = mongoose.model("User", userSchema);
 
 export default User;

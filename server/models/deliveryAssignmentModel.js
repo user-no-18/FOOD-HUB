@@ -18,6 +18,11 @@ const deliveryAssignmentSchema = new mongoose.Schema({
     acceptedAt: Date,
 }, { timestamps: true });
 
+// Add performance indexes for efficient dispatching queries
+deliveryAssignmentSchema.index({ broadcastedTo: 1, status: 1 });
+deliveryAssignmentSchema.index({ assignedTo: 1, status: 1 });
+deliveryAssignmentSchema.index({ order: 1, shop: 1 });
+
 const DeliveryAssignment = mongoose.model(
     "DeliveryAssignment",
     deliveryAssignmentSchema

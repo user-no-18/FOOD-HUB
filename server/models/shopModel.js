@@ -36,5 +36,9 @@ const shopSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Add performance indexes
+shopSchema.index({ city: 1 });
+shopSchema.index({ owner: 1 }, { unique: true });
+
 const Shop = mongoose.model("Shop", shopSchema);
 export default Shop;

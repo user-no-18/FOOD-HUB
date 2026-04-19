@@ -56,5 +56,8 @@ const itemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Index on shop for fast getItemByCity lookups (eliminates COLLSCAN)
+itemSchema.index({ shop: 1 });
+
 const item = mongoose.model("Item", itemSchema);
 export default item;

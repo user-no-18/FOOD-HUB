@@ -547,37 +547,43 @@ export const getdeliveryBoyAssignmemts = async (req, res) => {
 export const acceptOrder = async (req, res) => {
   try {
     const { assignmentId } = req.params;
-    const assignment = await DeliveryAssignment.findById(assignmentId);
+
+    // Use atomic findOneAndUpdate to prevent race conditions
+    // Only update if it's currently 'broadcasted' and has no assignedTo
+    const assignment = await DeliveryAssignment.findOneAndUpdate(
+      { _id: assignmentId, status: "broadcasted", assignedTo: null },
+      { $set: { assignedTo: req.userId, status: "assigned", acceptedAt: new Date() } },
+      { new: true }
+    );
 
     if (!assignment) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Assignment not found" });
-    }
-
-    if (assignment.status !== "broadcasted") {
-      return res.status(400).json({
+      // Check WHY it failed to give a good error message
+      const existing = await DeliveryAssignment.findById(assignmentId);
+      if (!existing) {
+        return res.status(404).json({ success: false, message: "Assignment not found" });
+      }
+      return res.status(409).json({
         success: false,
-        message: "Assignment is not available for acceptance",
+        message: "Assignment is no longer available (already accepted by someone else)",
       });
     }
 
-    const alreadyAssigned = await DeliveryAssignment.findOne({
+    const alreadyAssignedCount = await DeliveryAssignment.countDocuments({
       assignedTo: req.userId,
       status: "assigned",
+      _id: { $ne: assignmentId }
     });
 
-    if (alreadyAssigned) {
+    if (alreadyAssignedCount > 0) {
+      // Rollback the assignment if they are already busy
+      await DeliveryAssignment.findByIdAndUpdate(assignmentId, {
+        $set: { assignedTo: null, status: "broadcasted", acceptedAt: null }
+      });
       return res.status(400).json({
         success: false,
         message: "You already have an active assignment",
       });
     }
-
-    assignment.assignedTo = req.userId;
-    assignment.status = "assigned";
-    assignment.acceptedAt = new Date();
-    await assignment.save();
 
     const order = await Order.findById(assignment.order);
     if (!order) {

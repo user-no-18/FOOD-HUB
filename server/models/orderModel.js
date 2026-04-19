@@ -129,5 +129,10 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
+// Add performance indexes
+orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ "shopOrders.owner": 1, createdAt: -1 });
+orderSchema.index({ razorpayOrderId: 1 }, { sparse: true });
+
 const Order = mongoose.model("Order", orderSchema);
 export default Order;

@@ -147,6 +147,8 @@ export const deleteItemById = async (req, res) => {
   }
 };
 
+import { getCache, setCache } from "../utils/cache.js";
+
 export const getItemByCity = async (req, res) => {
   try {
     const { city } = req.params;
@@ -154,6 +156,17 @@ export const getItemByCity = async (req, res) => {
     if (!city) {
       return res.status(400).json({ message: "City parameter is required" });
     }
+
+    const cacheKey = `items:city:${city.toLowerCase()}`;
+    
+    // 1. Try fetching from Redis Cache first
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      console.log(`⚡ Cache HIT for city: ${city}`);
+      return res.status(200).json(cachedData); // No need to JSON.parse since the Upstash library handles it.
+    }
+    
+    console.log(`🐢 Cache MISS for city: ${city} - Fetching from MongoDB`);
 
     const shops = await Shop.find({
       city: { $regex: new RegExp(`^${city}$`, "i") },
@@ -163,10 +176,8 @@ export const getItemByCity = async (req, res) => {
       return res.status(404).json({ message: "No shops found in this city" });
     }
 
-    
     const shopIds = shops.map((shop) => shop._id);
 
-   
     const items = await Item.find({ shop: { $in: shopIds } });
 
     if (!items.length) {
@@ -175,12 +186,17 @@ export const getItemByCity = async (req, res) => {
         .json({ message: "No items found in shops of this city" });
     }
 
-    return res.status(200).json({
+    const responsePayload = {
       success: true,
       shopCount: shops.length,
       itemCount: items.length,
       items,
-    });
+    };
+    
+    // 2. Save it to Redis Cache for future requests (Expire in 5 minutes)
+    await setCache(cacheKey, responsePayload, 300);
+
+    return res.status(200).json(responsePayload);
   } catch (error) {
     console.error("Error fetching items by city:", error);
     return res.status(500).json({
